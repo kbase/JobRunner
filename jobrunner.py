@@ -1,14 +1,16 @@
 #!/usr/bin/env python
 
-import sys
+import logging
 import os
+import sys
+
 from JobRunner.JobRunner import JobRunner
 
 _TOKEN_ENV = "KB_AUTH_TOKEN"
 _ADMIN_TOKEN_ENV = "KB_ADMIN_AUTH_TOKEN"
 
 
-def _get_token():
+def _get_token() -> str:
     # Get the token from the environment or a file.
     # Set the KB_AUTH_TOKEN if not set.
     if _TOKEN_ENV in os.environ:
@@ -18,13 +20,13 @@ def _get_token():
             with open("token") as f:
                 token = f.read().rstrip()
             os.environ[_TOKEN_ENV] = token
-        except:
-            print("Failed to get token.")
+        except IOError:
+            logging.error("Failed to get token.")
             sys.exit(2)
     return token
 
 
-def _get_admin_token():
+def _get_admin_token() -> str:
     if _ADMIN_TOKEN_ENV not in os.environ:
         print("Missing admin token needed for volume mounts.")
         sys.exit(2)
@@ -40,9 +42,9 @@ def main():
         job_id = sys.argv[1]
         njs_url = sys.argv[2]
     else:
-        print("Incorrect usage")
+        logging.error("Incorrect usage")
         sys.exit(1)
-    config = {}
+    config = dict()
     config["workdir"] = os.environ.get("WORKDIR", "/tmp/")
     config["catalog-service-url"] = njs_url.replace("njs_wrapper", "catalog")
     token = _get_token()
@@ -52,8 +54,8 @@ def main():
         jr = JobRunner(config, njs_url, job_id, token, at)
         jr.run()
     except Exception as e:
-        print("An unhandled error was encountered")
-        print(e)
+        logging.error("An unhandled error was encountered")
+        logging.error(e)
         sys.exit(2)
 
 
