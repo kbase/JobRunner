@@ -109,7 +109,7 @@ class MethodRunner:
         # Mkdir workdir/tmp
         job_dir = self._get_job_dir(job_id, subjob=subjob)
         if not os.path.exists(job_dir):
-            os.mkdir(job_dir)
+            os.makedirs(job_dir)
         (module, method) = params["method"].split(".")
         version = params.get("service_ver")
 
