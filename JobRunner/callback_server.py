@@ -9,81 +9,79 @@ app = Sanic()
 outputs = dict()
 prov = None
 
+
 def _check_finished():
     global prov
-    in_q = app.config['in_q']
+    in_q = app.config["in_q"]
     try:
         # Flush the queue
         while True:
             [mtype, fjob_id, output] = in_q.get(block=False)
-            if mtype=='output':
+            if mtype == "output":
                 outputs[fjob_id] = output
-            elif mtype=='prov':
+            elif mtype == "prov":
                 prov = output
     except Empty:
         pass
 
+
 async def _process_rpc(data, token):
-    (module, method) = data['method'].split('.')
+    (module, method) = data["method"].split(".")
     # async submi job
-    if method.startswith('_') and method.endswith('_submit'):
-        if token != app.config.get('token'):
+    if method.startswith("_") and method.endswith("_submit"):
+        if token != app.config.get("token"):
             abort(401)
         job_id = str(uuid.uuid1())
-        data['method'] = '%s.%s' % (module, method[1:-7])
-        app.config['out_q'].put(['submit',  job_id, data])
-        return {'result': job_id}
+        data["method"] = "%s.%s" % (module, method[1:-7])
+        app.config["out_q"].put(["submit", job_id, data])
+        return {"result": job_id}
     # check job
-    elif method.startswith('_check_job'):
-        job_id = data['params'][0]
+    elif method.startswith("_check_job"):
+        job_id = data["params"][0]
         _check_finished()
-        resp = {'finished': False}
+        resp = {"finished": False}
         if job_id in outputs:
             resp = outputs[job_id]
-            resp['finished'] = True
+            resp["finished"] = True
             print("Subjob %s finished" % (job_id))
-        return {'result': [resp]}
+        return {"result": [resp]}
     # Provenance
-    elif method.startswith('get_provenance'):
+    elif method.startswith("get_provenance"):
         _check_finished()
-        return {'result':[prov]}
+        return {"result": [prov]}
     else:
-        if token != app.config.get('token'):
+        if token != app.config.get("token"):
             abort(401)
         job_id = str(uuid.uuid1())
-        data['method'] = '%s.%s' % (module, method[1:-7])
-        app.config['out_q'].put(['submit',  job_id, data])
+        data["method"] = "%s.%s" % (module, method[1:-7])
+        app.config["out_q"].put(["submit", job_id, data])
         try:
             while True:
                 _check_finished()
                 if job_id in outputs:
                     resp = outputs[job_id]
-                    resp['finished'] = True
+                    resp["finished"] = True
                     print("Subjob %s finished" % (job_id))
                     return resp
                 await asyncio.sleep(1)
         except:
-            return {'error': 'Timeout'}
+            return {"error": "Timeout"}
 
 
-@app.route("/", methods=['GET', 'POST'])
+@app.route("/", methods=["GET", "POST"])
 async def root(request):
-        data = request.json
-        if request.method=='POST' and 'method' in data:
-            token = request.headers.get('Authorization')
-            return  json(await _process_rpc(data, token))
-        return json({})
+    data = request.json
+    if request.method == "POST" and "method" in data:
+        token = request.headers.get("Authorization")
+        return json(await _process_rpc(data, token))
+    return json({})
 
 
 def start_callback_server(ip, port, out_queue, in_queue, token):
-    conf = {
-        'token': token,
-        'out_q': out_queue,
-        'in_q': in_queue
-    }
+    conf = {"token": token, "out_q": out_queue, "in_q": in_queue}
     app.config.update(conf)
     app.run(host=ip, port=port, debug=False, access_log=False)
-        
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8000)

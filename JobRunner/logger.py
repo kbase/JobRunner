@@ -1,10 +1,8 @@
-
-
 import sys
 from clients.NarrativeJobServiceClient import NarrativeJobService
 
-class Logger(object):
 
+class Logger(object):
     def __init__(self, njs_url, job_id, njs=None):
         self.njs_url = njs_url
         if njs is None:
@@ -16,7 +14,7 @@ class Logger(object):
 
     def log_lines(self, lines):
         for line in lines:
-            print(line['line'], flush=True)
+            print(line["line"], flush=True)
             # if line['is_error']:
             #     sys.stderr.write(line+'\n')
             # else:
@@ -25,8 +23,8 @@ class Logger(object):
 
     def log(self, line):
         print(line, flush=True)
-        self.njs.add_job_logs(self.job_id, [{'line': line, 'is_error': 0}])
+        self.njs.add_job_logs(self.job_id, [{"line": line, "is_error": 0}])
 
     def error(self, line):
         print(line, flush=True)
-        self.njs.add_job_logs(self.job_id, [{'line': line, 'is_error': 1}])
+        self.njs.add_job_logs(self.job_id, [{"line": line, "is_error": 1}])
