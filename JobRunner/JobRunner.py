@@ -1,6 +1,7 @@
 import sys
 import os
 from .logger import Logger
+import logging
 from clients.NarrativeJobServiceClient import NarrativeJobService as NJS
 from clients.authclient import KBaseAuth
 from .MethodRunner import MethodRunner
@@ -15,6 +16,7 @@ import socket
 import signal
 from .CatalogCache import CatalogCache
 
+logging.basicConfig(level=logging.INFO)
 
 class JobRunner(object):
     """
@@ -195,22 +197,28 @@ class JobRunner(object):
 
         return user
 
-    def run(self):
+    def run(self, rerun=False):
         """
         This method starts the actual run.  This is a blocking operation and
         will not return until the job finishes or encounters and error.
         This method also handles starting up the callback server.
         """
-        self.logger.log('Running on {} ({}) in {}'.format(self.hostname,
+        running = 'Running on {} ({}) in {}'.format(self.hostname,
                                                           self.ip,
-                                                          self.workdir))
-        self.logger.log('Client group: {}'.format(self.client_group))
+                                                          self.workdir)
+
+        cg = 'Client group: {}'.format(self.client_group)
+        logging.info(running)
+        self.logger.log(running)
+        self.logger.log(cg)
 
         # Check to see if the job was run before or canceled already.
         # If so, log it
-        if not self._check_job_status():
+        if not self._check_job_status() and rerun is False:
+            error = "Job already run or canceled"
             self.logger.error("Job already run or canceled")
-            sys.exit(1)
+            logging.info(error)
+            return {'error' : error}
 
         # Get job inputs from njs db
         try:
@@ -246,8 +254,16 @@ class JobRunner(object):
         self._submit(config, self.job_id, params, subjob=False)
 
         output = self._watch(config)
+        logging.info("Job is done")
+        logging.info(output)
+
         # TODO: Check to see if job completes and returns too much data
-        cbs.kill()
+        try:
+            cbs.kill()
+        except:
+            pass
+
+        cbs.terminate()
         self.logger.log('Job is done')
         self.njs.finish_job(self.job_id, output)
         # TODO: Attempt to clean up any running docker containers
