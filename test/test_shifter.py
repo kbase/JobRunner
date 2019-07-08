@@ -14,6 +14,10 @@ class MockLogger(object):
         self.errors = []
         self.all = []
 
+
+    def flush_logs(self):
+        pass
+
     def log_lines(self, lines):
         self.all.extend(lines)
 

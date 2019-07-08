@@ -90,6 +90,7 @@ class JobRunnerTest(unittest.TestCase):
         jr.njs.check_job_canceled.return_value = {'finished': False}
         jr.auth.get_user.return_value = "bogus"
         out = jr.run()
+        print(out)
         self.assertIn('result', out)
         self.assertNotIn('error', out)
 
