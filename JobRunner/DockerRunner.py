@@ -87,7 +87,8 @@ class DockerRunner:
         t = Thread(target=self._shepherd, args=[c, job_id, subjob, queues])
         self.threads.append(t)
         t.start()
-        self.logger.flush_logs()
+        if self.logger:
+            self.logger.flush_logs()
         return c
 
     def remove(self, c):

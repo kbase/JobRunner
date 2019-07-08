@@ -74,7 +74,8 @@ class ShifterRunner:
         self.threads.append(out)
         out.start()
         self.containers.append(proc)
-        self.logger.flush_logs()
+        if self.logger:
+            self.logger.flush_logs()
         return proc
 
     def remove(self, c):
