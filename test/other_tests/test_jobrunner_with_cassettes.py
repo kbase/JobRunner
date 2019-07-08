@@ -11,6 +11,7 @@ from clients.authclient import KBaseAuth
 logging.basicConfig(level=logging.INFO)
 
 load_dotenv("test.env")
+load_dotenv("test/other_tests/test.env")
 import os
 import unittest
 
