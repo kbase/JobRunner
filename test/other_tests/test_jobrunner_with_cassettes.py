@@ -3,14 +3,14 @@ import logging
 
 import vcr
 from dotenv import load_dotenv
-from job import j1
+from test.mock_data.job import j1
 
 from clients.NarrativeJobServiceClient import NarrativeJobService
 from clients.authclient import KBaseAuth
 
 logging.basicConfig(level=logging.INFO)
 
-load_dotenv("test.env")
+
 load_dotenv("test/other_tests/test.env")
 import os
 import unittest

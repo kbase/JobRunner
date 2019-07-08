@@ -7,17 +7,8 @@ from mock import MagicMock
 from JobRunner.JobRunner import JobRunner
 from nose.plugins.attrib import attr
 from copy import deepcopy
-try:
-    from mock_data import CATALOG_GET_MODULE_VERSION, NJS_JOB_PARAMS, \
-            CATALOG_LIST_VOLUME_MOUNTS
-except:
-    pass
-
-try:
-    from .mock_data import CATALOG_GET_MODULE_VERSION, NJS_JOB_PARAMS, \
-            CATALOG_LIST_VOLUME_MOUNTS
-except:
-    pass
+from test.mock_data.mock_data import CATALOG_GET_MODULE_VERSION, NJS_JOB_PARAMS, \
+        CATALOG_LIST_VOLUME_MOUNTS
 
 
 class JobRunnerTest(unittest.TestCase):
@@ -54,8 +45,6 @@ class JobRunnerTest(unittest.TestCase):
                     os.unlink(os.path.join(d, fn))
             os.rmdir(d)
 
-
-    @unittest.skip(" skipping")
     @attr('offline')
     @patch('JobRunner.JobRunner.KBaseAuth', autospec=True)
     @patch('JobRunner.JobRunner.NJS', autospec=True)
@@ -80,8 +69,6 @@ class JobRunnerTest(unittest.TestCase):
         self.assertIn('result', out)
         self.assertNotIn('error', out)
 
-
-    @unittest.skip(" skipping")
     @attr('offline')
     @patch('JobRunner.JobRunner.KBaseAuth', autospec=True)
     @patch('JobRunner.JobRunner.NJS', autospec=True)
@@ -106,8 +93,6 @@ class JobRunnerTest(unittest.TestCase):
         self.assertIn('result', out)
         self.assertNotIn('error', out)
 
-
-    @unittest.skip(" skipping")
     @attr('offline')
     @patch('JobRunner.JobRunner.KBaseAuth', autospec=True)
     @patch('JobRunner.JobRunner.NJS', autospec=True)
@@ -136,8 +121,6 @@ class JobRunnerTest(unittest.TestCase):
         self.assertIn('result', out)
         self.assertNotIn('error', out)
 
-
-    @unittest.skip(" skipping")
     @attr('offline')
     @patch('JobRunner.JobRunner.KBaseAuth', autospec=True)
     @patch('JobRunner.JobRunner.NJS', autospec=True)
@@ -164,8 +147,7 @@ class JobRunnerTest(unittest.TestCase):
 
     @attr('online')
     @patch('JobRunner.JobRunner.NJS', autospec=True)
-    @patch('JobRunner.JobRunner.KBaseAuth', autospec=True)
-    def test_run_online(self, mock_njs, mock_auth):
+    def test_run_online(self, mock_njs):
         self._cleanup(self.jobid)
         params = deepcopy(NJS_JOB_PARAMS)
         jr = JobRunner(self.config, self.njs_url, self.jobid, self.token,
@@ -175,13 +157,10 @@ class JobRunnerTest(unittest.TestCase):
         jr.logger.njs.add_job_logs = MagicMock(return_value=rv)
         jr.njs.check_job_canceled.return_value = {'finished': False}
         jr.njs.get_job_params.return_value = params
-        jr.cc.catadmin.list_volume_mounts = MagicMock(return_value=[])
-        jr.auth.get_user.return_value = "bogus"
         out = jr.run()
         self.assertIn('result', out)
         self.assertNotIn('error', out)
 
-    @unittest.skip(" skipping")
     @patch('JobRunner.JobRunner.NJS', autospec=True)
     @patch('JobRunner.JobRunner.KBaseAuth', autospec=True)
     def test_token(self, mock_njs, mock_auth):

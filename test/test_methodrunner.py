@@ -7,7 +7,7 @@ from queue import Queue
 
 from JobRunner.MethodRunner import MethodRunner
 from JobRunner.logger import Logger
-from .mock_data import NJS_JOB_PARAMS, CATALOG_GET_MODULE_VERSION
+from test.mock_data.mock_data  import NJS_JOB_PARAMS, CATALOG_GET_MODULE_VERSION
 
 
 class MockLogger(object):

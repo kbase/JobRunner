@@ -60,7 +60,7 @@ class JobRunner(object):
         config['admin_token'] = self.admin_token
         return config
 
-    def _check_job_status(self):
+    def _job_ready_to_run(self):
         """
         returns True if the job is still okay to run.
         """
@@ -159,7 +159,7 @@ class JobRunner(object):
                 # This shouldn't happen
                 return
             # Run cancellation / finish job checker
-            if not self._check_job_status():
+            if not self._job_ready_to_run():
                 self.logger.error("Job canceled or unexpected error")
                 self._cancel()
                 return {'error': 'Canceled or unexpected error'}
@@ -214,7 +214,7 @@ class JobRunner(object):
 
         # Check to see if the job was run before or canceled already.
         # If so, log it
-        if not self._check_job_status() and rerun is False:
+        if not self._job_ready_to_run() and rerun is False:
             error = "Job already run or canceled"
             self.logger.error("Job already run or canceled")
             logging.info(error)
