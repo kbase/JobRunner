@@ -247,8 +247,9 @@ class JobRunner(object):
 
         output = self._watch(config)
         # TODO: Check to see if job completes and returns too much data
-        cbs.kill()
+        cbs.terminate()
         self.logger.log('Job is done')
+        self.logger.flush_logs()
         self.njs.finish_job(self.job_id, output)
         # TODO: Attempt to clean up any running docker containers
         #       (if something crashed, for example)
