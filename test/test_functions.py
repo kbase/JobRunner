@@ -58,7 +58,9 @@ class JobRunnerTest(unittest.TestCase):
                        'auth2-url': 'https://ci.kbase.us/services/auth/api/V2/token',
                        'workdir': '/tmp/jr', 'hostname': socket.gethostname(),
                        'job_id': self.jobid, 'njs_url': self.njs_url,
-                       'cgroup': None, 'token': self.token, 'admin_token': self.admin_token}
+                       'token': self.token, 'admin_token': self.admin_token}
+
+        del config['cgroup']
 
         self.assertEquals(test_config, config)
 
