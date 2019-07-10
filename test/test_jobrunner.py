@@ -1,15 +1,17 @@
 # -*- coding: utf-8 -*-
 import os
+import socket
 import unittest
+from copy import deepcopy
 from unittest.mock import patch
+
 from mock import MagicMock
+from nose.plugins.attrib import attr
+from requests import ConnectionError
 
 from JobRunner.JobRunner import JobRunner
-from nose.plugins.attrib import attr
-from copy import deepcopy
 from test.mock_data import CATALOG_GET_MODULE_VERSION, NJS_JOB_PARAMS, \
-        CATALOG_LIST_VOLUME_MOUNTS
-from requests import ConnectionError
+    CATALOG_LIST_VOLUME_MOUNTS
 
 
 class MockLogger(object):
@@ -254,3 +256,42 @@ class JobRunnerTest(unittest.TestCase):
         with self.assertRaises(ConnectionError):
             jr.run()
         self.assertEquals(mlog.errors[0], 'Failed to get job parameters. Exiting.')
+
+    @patch('JobRunner.JobRunner.NJS', autospec=True)
+    @patch('JobRunner.JobRunner.KBaseAuth', autospec=True)
+    def test_config(self, mock_njs, mock_auth):
+        self._cleanup(self.jobid)
+        params = deepcopy(NJS_JOB_PARAMS)
+        os.environ['KB_AUTH_TOKEN'] = 'bogus'
+        jr = JobRunner(self.config, self.njs_url, self.jobid, self.token,
+                       self.admin_token)
+
+        config = jr._init_config(self.config, self.jobid, self.njs_url)
+        test_config = {'catalog-service-url': 'https://ci.kbase.us/services/catalog',
+                       'auth-service-url': 'https://ci.kbase.us/services/auth/api/legacy/KBase/Sessions/Login',
+                       'auth2-url': 'https://ci.kbase.us/services/auth/api/V2/token',
+                       'workdir': '/tmp/jr', 'hostname': socket.gethostname(),
+                       'job_id': self.jobid, 'njs_url': self.njs_url,
+                       'token': self.token, 'admin_token': self.admin_token}
+
+        del config['cgroup']
+
+        self.assertEquals(test_config, config)
+
+
+    @patch('JobRunner.JobRunner.NJS', autospec=True)
+    @patch('JobRunner.JobRunner.KBaseAuth', autospec=True)
+    def test_job_ready_to_run(self, mock_njs, mock_auth):
+        self._cleanup(self.jobid)
+        params = deepcopy(NJS_JOB_PARAMS)
+        os.environ['KB_AUTH_TOKEN'] = 'bogus'
+        jr = JobRunner(self.config, self.njs_url, self.jobid, self.token,
+                       self.admin_token)
+
+        jr.njs.check_job_canceled.return_value = {'finished': False}
+        ready_to_run = jr._job_ready_to_run()
+        self.assertEquals(ready_to_run, True)
+    
+        jr.njs.check_job_canceled.return_value = {'finished': True}
+        ready_to_run = jr._job_ready_to_run()
+        self.assertEquals(ready_to_run, False)
