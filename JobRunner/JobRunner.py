@@ -1,17 +1,19 @@
+import logging
 import os
+import signal
+import socket
+from multiprocessing import Process, Queue
+from queue import Empty
+from socket import gethostname
 from time import sleep as _sleep
-from .logger import Logger
+
 from clients.NarrativeJobServiceClient import NarrativeJobService as NJS
 from clients.authclient import KBaseAuth
+from .CatalogCache import CatalogCache
 from .MethodRunner import MethodRunner
 from .callback_server import start_callback_server
-from socket import gethostname
-from multiprocessing import Process, Queue
+from .logger import Logger
 from .provenance import Provenance
-from queue import Empty
-import socket
-import signal
-from .CatalogCache import CatalogCache
 
 
 class JobRunner(object):
@@ -34,6 +36,7 @@ class JobRunner(object):
         self.hostname = gethostname()
         self.auth = KBaseAuth(config.get('auth-service-url'))
         self.job_id = job_id
+        self.condor_id = os.environ.get('CONDOR_ID', None)
         self.workdir = config.get('workdir', '/mnt/awe/condor')
         self.jr_queue = Queue()
         self.callback_queue = Queue()
@@ -57,7 +60,7 @@ class JobRunner(object):
         config['admin_token'] = self.admin_token
         return config
 
-    def _check_job_status(self):
+    def _job_ready_to_run(self):
         """
         returns True if the job is still okay to run.
         """
@@ -158,7 +161,7 @@ class JobRunner(object):
                 # This shouldn't happen
                 return
             # Run cancellation / finish job checker
-            if not self._check_job_status():
+            if not self._job_ready_to_run():
                 self.logger.error("Job canceled or unexpected error")
                 self._cancel()
                 _sleep(5)
@@ -203,14 +206,19 @@ class JobRunner(object):
         will not return until the job finishes or encounters and error.
         This method also handles starting up the callback server.
         """
-        self.logger.log('Running on {} ({}) in {}'.format(self.hostname,
-                                                          self.ip,
-                                                          self.workdir))
-        self.logger.log('Client group: {}'.format(self.client_group))
+        runmsg = f"Running job_id {self.job_id} {self.condor_id} on " \
+                 f"{self.hostname} ({self.ip}) in {self.workdir}"
+
+        logging.info(runmsg)
+        self.logger.log(runmsg)
+
+        runmsg = 'Client group: {}'.format(self.client_group)
+        logging.info(runmsg)
+        self.logger.log(runmsg)
 
         # Check to see if the job was run before or canceled already.
         # If so, log it
-        if not self._check_job_status():
+        if not self._job_ready_to_run():
             self.logger.error("Job already run or canceled")
             raise OSError("Canceled job")
 
@@ -248,8 +256,9 @@ class JobRunner(object):
         self._submit(config, self.job_id, params, subjob=False)
 
         output = self._watch(config)
-
-        cbs.kill()
+        logging.info("Job is done")
+        logging.info(output)
+        cbs.terminate()
         self.logger.log('Job is done')
         self.njs.finish_job(self.job_id, output)
         # TODO: Attempt to clean up any running docker containers
