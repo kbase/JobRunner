@@ -6,9 +6,7 @@ from multiprocessing import Process, Queue
 from queue import Empty
 from socket import gethostname
 from time import sleep as _sleep
-from queue import Empty
-import socket
-import signal
+
 import requests
 
 from clients.NarrativeJobServiceClient import NarrativeJobService as NJS
@@ -19,8 +17,6 @@ from .SpecialRunner import SpecialRunner
 from .callback_server import start_callback_server
 from .logger import Logger
 from .provenance import Provenance
-from .logger import Logger
-from .CatalogCache import CatalogCache
 
 
 class JobRunner(object):
