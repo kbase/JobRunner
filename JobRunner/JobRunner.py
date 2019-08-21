@@ -6,14 +6,21 @@ from multiprocessing import Process, Queue
 from queue import Empty
 from socket import gethostname
 from time import sleep as _sleep
+from queue import Empty
+import socket
+import signal
+import requests
 
 from clients.NarrativeJobServiceClient import NarrativeJobService as NJS
 from clients.authclient import KBaseAuth
 from .CatalogCache import CatalogCache
 from .MethodRunner import MethodRunner
+from .SpecialRunner import SpecialRunner
 from .callback_server import start_callback_server
 from .logger import Logger
 from .provenance import Provenance
+from .logger import Logger
+from .CatalogCache import CatalogCache
 
 
 class JobRunner(object):
@@ -43,6 +50,7 @@ class JobRunner(object):
         self.prov = None
         self._init_callback_url()
         self.mr = MethodRunner(self.config, job_id, logger=self.logger)
+        self.sr = SpecialRunner(self.config, job_id, logger=self.logger)
         self.cc = CatalogCache(config)
         self.max_task = config.get('max_tasks', 20)
         signal.signal(signal.SIGINT, self.shutdown)
@@ -92,6 +100,17 @@ class JobRunner(object):
                         return items[2]
         return "Unknown"
 
+    def _submit_special(self, config, job_id, data):
+        """
+        Handler for methods such as CWL, WDL and HPC
+        """
+        (module, method) = data['method'].split('.')
+        self.logger.log("Submit %s as a %s:%s job" % (job_id, module, method))
+
+        self.sr.run(config, data, job_id,
+                    callback=self.callback_url,
+                    fin_q=[self.jr_queue])
+
     def _submit(self, config, job_id, data, subjob=True):
         (module, method) = data['method'].split('.')
         version = data.get('service_ver')
@@ -129,16 +148,29 @@ class JobRunner(object):
         # Run a thread for 7 day max job runtime
         cont = True
         ct = 1
+        exp_time = self._get_token_lifetime(config) - 600
         while cont:
             try:
                 req = self.jr_queue.get(timeout=1)
+                if _time() > exp_time:
+                    err = "Token has expired"
+                    self.logger.error(err)
+                    self._cancel()
+                    return {'error': err}
                 if req[0] == 'submit':
                     if ct > self.max_task:
                         self.logger.error("Too many subtasks")
                         self._cancel()
                         return {'error': 'Canceled or unexpected error'}
-                    self._submit(config, req[1], req[2])
+                    if req[2].get('method').startswith('special.'):
+                        self._submit_special(config, req[1], req[2])
+                    else:
+                        self._submit(config, req[1], req[2])
                     ct += 1
+                elif req[0] == 'finished_special':
+                    job_id = req[1]
+                    self.callback_queue.put(['output', job_id, req[2]])
+                    ct -= 1
                 elif req[0] == 'finished':
                     subjob = True
                     job_id = req[1]
@@ -158,6 +190,7 @@ class JobRunner(object):
             except Empty:
                 pass
             if ct == 0:
+                print("Count got to 0 without finish")
                 # This shouldn't happen
                 return
             # Run cancellation / finish job checker
@@ -199,6 +232,16 @@ class JobRunner(object):
             raise Exception()
 
         return user
+
+    def _get_token_lifetime(self, config):
+        try:
+            url = config.get('auth.service.url.v2')
+            header = {'Authorization': self.config['token']}
+            resp = requests.get(url, headers=header).json()
+            return resp['expires']
+        except Exception as e:
+            self.logger.error("Failed to get token lifetime")
+            raise e
 
     def run(self):
         """

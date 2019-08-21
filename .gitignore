@@ -5,3 +5,4 @@ test_coverage
 runtester.ready
 test/RunTester
 .idea
+build/
