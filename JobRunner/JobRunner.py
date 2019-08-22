@@ -2,11 +2,11 @@ import logging
 import os
 import signal
 import socket
-import time as _time
 from multiprocessing import Process, Queue
 from queue import Empty
 from socket import gethostname
 from time import sleep as _sleep
+from time import time as _time
 
 import requests
 
