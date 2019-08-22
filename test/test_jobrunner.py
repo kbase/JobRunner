@@ -302,15 +302,22 @@ class JobRunnerTest(unittest.TestCase):
         os.environ['KB_AUTH_TOKEN'] = 'bogus'
         jr = JobRunner(self.config, self.njs_url, self.jobid, self.token,
                        self.admin_token)
-
+        mlog = MockLogger()
+        jr.logger = mlog
         jr.njs.check_job_canceled.return_value = {'finished': False}
         ready_to_run = jr._job_ready_to_run()
         self.assertEquals(ready_to_run, True)
-    
+
+
+
         jr.njs.check_job_canceled.return_value = {'finished': True}
         ready_to_run = jr._job_ready_to_run()
         self.assertEquals(ready_to_run, False)
-        emsg = 'Failed to get job parameters. Exiting.'
+
+        with self.assertRaises(OSError):
+            jr.run()
+
+        emsg = 'Job already run or canceled'
         self.assertEquals(mlog.errors[0], emsg)
 
     @attr('offline')
