@@ -298,7 +298,6 @@ class JobRunnerTest(unittest.TestCase):
     @patch('JobRunner.JobRunner.KBaseAuth', autospec=True)
     def test_job_ready_to_run(self, mock_njs, mock_auth):
         self._cleanup(self.jobid)
-        params = deepcopy(NJS_JOB_PARAMS)
         os.environ['KB_AUTH_TOKEN'] = 'bogus'
         jr = JobRunner(self.config, self.njs_url, self.jobid, self.token,
                        self.admin_token)
@@ -307,8 +306,6 @@ class JobRunnerTest(unittest.TestCase):
         jr.njs.check_job_canceled.return_value = {'finished': False}
         ready_to_run = jr._job_ready_to_run()
         self.assertEquals(ready_to_run, True)
-
-
 
         jr.njs.check_job_canceled.return_value = {'finished': True}
         ready_to_run = jr._job_ready_to_run()
