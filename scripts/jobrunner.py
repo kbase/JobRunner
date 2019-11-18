@@ -31,14 +31,25 @@ def sigterm_handler(signal, frame):
     # this method defines the handler i.e. what to do
     # when you receive a SIGTERM
     # remove all containers
+    pid = os.getpid()
+    logging.info("Main thread PID", pid)
     logging.info("I got your signal", signal)
     logging.info("I got your frame", frame)
     token = _get_token()
     ee2 = execution_engine2(url=ee2_url, token=token)
     cjp = {'job_id': job_id, 'terminated_code': TerminatedCode.terminated_by_automation.value}
+
     ee2.cancel_job(cjp)
+
+
+    ee2.add_job_logs()
+    pid = os.getpid()
+    jr.logger.log(line=f"{pid} Caught a sig kill from condor_rm. Attempting to shut down all containers")
+    jr.ee2.cancel_job(cjp)
+    
     time.sleep(1)
     jr._cancel()
+
     #jr.mr.cleanup_all()
 
 signal.signal(signal.SIGTERM, sigterm_handler)
