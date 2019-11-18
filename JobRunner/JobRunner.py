@@ -22,6 +22,8 @@ from .provenance import Provenance
 logging.basicConfig(level=logging.INFO)
 
 
+
+
 class JobRunner(object):
     """
     This class provides the mechanisms to launch a KBase job

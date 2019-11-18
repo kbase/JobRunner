@@ -2,13 +2,46 @@
 
 import logging
 import os
+import signal
 import sys
+import time
 
 from JobRunner.JobRunner import JobRunner
+from clients.execution_engine2Client import execution_engine2
 
 logging.basicConfig(level=logging.INFO)
 _TOKEN_ENV = "KB_AUTH_TOKEN"
 _ADMIN_TOKEN_ENV = "KB_ADMIN_AUTH_TOKEN"
+
+jr = None # type:JobRunner
+job_id = None
+ee2_url = None
+
+class TerminatedCode(Enum):
+    """
+    Reasons for why the job was cancelled
+    """
+
+    terminated_by_user = 0
+    terminated_by_admin = 1
+    terminated_by_automation = 2
+
+
+def sigterm_handler(signal, frame):
+    # this method defines the handler i.e. what to do
+    # when you receive a SIGTERM
+    # remove all containers
+    logging.info("I got your signal", signal)
+    logging.info("I got your frame", frame)
+    token = _get_token()
+    ee2 = execution_engine2(url=ee2_url, token=token)
+    cjp = {'job_id': job_id, 'terminated_code': TerminatedCode.terminated_by_automation.value}
+    ee2.cancel_job(cjp)
+    time.sleep(1)
+    jr._cancel()
+    #jr.mr.cleanup_all()
+
+signal.signal(signal.SIGTERM, sigterm_handler)
 
 
 def _get_token():
@@ -38,6 +71,9 @@ def _get_admin_token():
 
 
 def main():
+    global job_id
+    global ee2_url
+
     # Input job id and njs_service URL
     if len(sys.argv) == 3:
         job_id = sys.argv[1]
@@ -66,6 +102,7 @@ def main():
     token = _get_token()
     at = _get_admin_token()
 
+    global jr
     try:
         logging.info("About to create job runner")
         jr = JobRunner(config, ee2_url, job_id, token, at)
@@ -74,7 +111,6 @@ def main():
     except Exception as e:
         logging.error("An unhandled error was encountered")
         logging.error(e)
-
         sys.exit(2)
 
 
