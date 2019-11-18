@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import enum
 import logging
 import os
 import signal
@@ -13,15 +14,15 @@ logging.basicConfig(level=logging.INFO)
 _TOKEN_ENV = "KB_AUTH_TOKEN"
 _ADMIN_TOKEN_ENV = "KB_ADMIN_AUTH_TOKEN"
 
-jr = None # type:JobRunner
+jr = None  # type:JobRunner
 job_id = None
 ee2_url = None
+
 
 class TerminatedCode(Enum):
     """
     Reasons for why the job was cancelled
     """
-
     terminated_by_user = 0
     terminated_by_admin = 1
     terminated_by_automation = 2
@@ -41,16 +42,17 @@ def sigterm_handler(signal, frame):
 
     ee2.cancel_job(cjp)
 
-
     ee2.add_job_logs()
     pid = os.getpid()
-    jr.logger.log(line=f"{pid} Caught a sig kill from condor_rm. Attempting to shut down all containers")
+    jr.logger.log(
+        line=f"{pid} Caught a sig kill from condor_rm. Attempting to shut down all containers")
     jr.ee2.cancel_job(cjp)
-    
+
     time.sleep(1)
     jr._cancel()
 
-    #jr.mr.cleanup_all()
+    # jr.mr.cleanup_all()
+
 
 signal.signal(signal.SIGTERM, sigterm_handler)
 
@@ -103,7 +105,7 @@ def main():
     auth_ext = 'auth/api/legacy/KBase/Sessions/Login'
     config['auth-service-url'] = ee2_url.replace('ee2', auth_ext)
 
-    #WARNING: Condor job environment may not inherit from system ENV
+    # WARNING: Condor job environment may not inherit from system ENV
     if 'USE_SHIFTER' in os.environ:
         config['runtime'] = 'shifter'
 
