@@ -19,12 +19,12 @@ class SpecialRunner:
         self.config = config
         self.top_job_id = job_id
         self.logger = logger
-        self.token = config['token']
-        self.workdir = config.get('workdir', '/mnt/awe/condor')
-        self.shareddir = os.path.join(self.workdir, 'workdir/tmp')
+        self.token = config["token"]
+        self.workdir = config.get("workdir", "/mnt/awe/condor")
+        self.shareddir = os.path.join(self.workdir, "workdir/tmp")
         self.containers = []
         self.threads = []
-        self.allowed_types = ['slurm']
+        self.allowed_types = ["slurm"]
 
     _POLL = 0.1
     _POLL2 = 0.1
@@ -35,9 +35,9 @@ class SpecialRunner:
         # check job type against an allow list
         # submit the job and map the batch jobb to the job id
         # start a thread to monitor progress
-        (module, method) = data['method'].split('.')
+        (module, method) = data["method"].split(".")
 
-        if module != 'special':
+        if module != "special":
             err = "Attempting to run the wrong type of module. "
             err += "The module should be 'special'"
             raise ValueError(err)
@@ -51,18 +51,17 @@ class SpecialRunner:
         cmd = [check, slurm_jobid]
         proc = Popen(cmd, stdout=PIPE, stderr=PIPE)
         stdout, stderr = proc.communicate()
-        return stdout.decode('utf-8').rstrip()
+        return stdout.decode("utf-8").rstrip()
 
-    def _watch_batch(self, stype, job_id, slurm_jobid,
-                     outfile, errfile, queues):
+    def _watch_batch(self, stype, job_id, slurm_jobid, outfile, errfile, queues):
         self.logger.log("Watching Slurm Job ID %s" % (slurm_jobid))
-        check = '%s_checkjob' % (stype)
+        check = "%s_checkjob" % (stype)
         cont = True
         started = False
         # Wait for job to start out output file to appear
         while cont:
             state = self._check_batch_job(check, slurm_jobid)
-            if state == 'Running':
+            if state == "Running":
                 self.logger.log("Running")
                 started = True
             elif state == "Pending":
@@ -106,9 +105,9 @@ class SpecialRunner:
                     elif f == stderr and self.logger:
                         self.logger.error(line)
             sleep(self._POLL2)
-        res = {'result': [{'exit_status': 0}]}
+        res = {"result": [{"exit_status": 0}]}
         for q in queues:
-            q.put(['finished_special', job_id, res])
+            q.put(["finished_special", job_id, res])
 
     def _batch_submit(self, stype, config, data, job_id, fin_q):
         """
@@ -119,24 +118,24 @@ class SpecialRunner:
         batch system will return a job id and log output to
         a specified file.
         """
-        params = data['params'][0]
-        submit = '%s_submit' % (stype)
-        if 'submit_script' not in params:
+        params = data["params"][0]
+        submit = "%s_submit" % (stype)
+        if "submit_script" not in params:
             raise ValueError("Missing submit script")
         os.chdir(self.shareddir)
-        scr = params['submit_script']
+        scr = params["submit_script"]
         if not os.path.exists(scr):
             raise OSError("Submit script not found at %s" % (scr))
-        outfile = '%s.out' % (job_id)
-        errfile = '%s.err' % (job_id)
+        outfile = "%s.out" % (job_id)
+        errfile = "%s.err" % (job_id)
         cmd = [submit, scr, outfile, errfile]
         proc = Popen(cmd, stdout=PIPE, stderr=PIPE)
         stdout, stderr = proc.communicate()
-        slurm_jobid = stdout.decode('utf-8').rstrip()
-        out = Thread(target=self._watch_batch, args=[stype, job_id,
-                                                     slurm_jobid,
-                                                     outfile, errfile,
-                                                     fin_q])
+        slurm_jobid = stdout.decode("utf-8").rstrip()
+        out = Thread(
+            target=self._watch_batch,
+            args=[stype, job_id, slurm_jobid, outfile, errfile, fin_q],
+        )
         self.threads.append(out)
         out.start()
         self.containers.append(proc)

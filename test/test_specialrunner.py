@@ -27,33 +27,26 @@ class MockLogger(object):
 
 
 class SpecialRunnerTest(unittest.TestCase):
-
     @classmethod
     def setUpClass(cls):
         cls.logger = MockLogger()
-        cls.config = {
-            'token': 'bogus',
-            'workdir': '/tmp/'
-        }
-        cls.sr = SpecialRunner(cls.config, '123', logger=cls.logger)
+        cls.config = {"token": "bogus", "workdir": "/tmp/"}
+        cls.sr = SpecialRunner(cls.config, "123", logger=cls.logger)
 
     def test_run(self):
         config = {}
-        data = {
-            'method': 'special.slurm',
-            'params': [{'submit_script': 'submit.sl'}]
-        }
-        job_id = '1234'
-        if not os.path.exists('/tmp/workdir/tmp'):
-            os.makedirs('/tmp/workdir/tmp/')
-        with open('/tmp/workdir/tmp/submit.sl', 'w') as f:
-            f.write('#!/bin/sh')
-            f.write('echo Hello')
+        data = {"method": "special.slurm", "params": [{"submit_script": "submit.sl"}]}
+        job_id = "1234"
+        if not os.path.exists("/tmp/workdir/tmp"):
+            os.makedirs("/tmp/workdir/tmp/")
+        with open("/tmp/workdir/tmp/submit.sl", "w") as f:
+            f.write("#!/bin/sh")
+            f.write("echo Hello")
         q = Queue()
         self.sr.run(config, data, job_id, fin_q=[q])
         result = q.get(timeout=10)
-        self.assertEquals(result[0], 'finished_special')
+        self.assertEquals(result[0], "finished_special")
         self.assertEquals(len(result), 3)
-        self.assertIn(['line1\n', 0], self.logger.all)
-        self.assertIn(['line2\n', 1], self.logger.all)
-        self.assertIn(['line3\n', 0], self.logger.all)
+        self.assertIn(["line1\n", 0], self.logger.all)
+        self.assertIn(["line2\n", 1], self.logger.all)
+        self.assertIn(["line3\n", 0], self.logger.all)

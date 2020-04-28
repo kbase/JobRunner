@@ -15,7 +15,7 @@ def _get_token():
         token = os.environ[_TOKEN_ENV]
     else:
         try:
-            with open('token') as f:
+            with open("token") as f:
                 token = f.read().rstrip()
             os.environ[_TOKEN_ENV] = token
         except:
@@ -28,7 +28,7 @@ def _get_admin_token():
     if _ADMIN_TOKEN_ENV not in os.environ:
         print("Missing admin token needed for volume mounts.")
         sys.exit(2)
-    admin_token = os.environ.pop('KB_ADMIN_AUTH_TOKEN')
+    admin_token = os.environ.pop("KB_ADMIN_AUTH_TOKEN")
     if _ADMIN_TOKEN_ENV in os.environ:
         print("Failed to sanitize environment")
     return admin_token
@@ -43,22 +43,22 @@ def main():
         print("Incorrect usage")
         sys.exit(1)
     config = {}
-    config['workdir'] = os.environ.get("JOB_DIR", '/tmp/')
-    if not os.path.exists(config['workdir']):
-        os.makedirs(config['workdir'])
-    config['catalog-service-url'] = njs_url.replace('njs_wrapper', 'catalog')
-    auth_ext = 'auth/api/legacy/KBase/Sessions/Login'
-    config['auth-service-url'] = njs_url.replace('njs_wrapper', auth_ext)
-    if 'USE_SHIFTER' in os.environ:
-        config['runtime'] = 'shifter'
+    config["workdir"] = os.environ.get("JOB_DIR", "/tmp/")
+    if not os.path.exists(config["workdir"]):
+        os.makedirs(config["workdir"])
+    config["catalog-service-url"] = njs_url.replace("njs_wrapper", "catalog")
+    auth_ext = "auth/api/legacy/KBase/Sessions/Login"
+    config["auth-service-url"] = njs_url.replace("njs_wrapper", auth_ext)
+    if "USE_SHIFTER" in os.environ:
+        config["runtime"] = "shifter"
 
-    if 'JR_MAX_TASKS' in os.environ:
-        config['max_tasks'] = int(os.environ['JR_MAX_TASKS'])
+    if "JR_MAX_TASKS" in os.environ:
+        config["max_tasks"] = int(os.environ["JR_MAX_TASKS"])
 
     token = _get_token()
     at = _get_admin_token()
-    if not os.path.exists(config['workdir']):
-        os.makedirs(config['workdir'])
+    if not os.path.exists(config["workdir"]):
+        os.makedirs(config["workdir"])
 
     try:
         jr = JobRunner(config, njs_url, job_id, token, at)
@@ -68,5 +68,6 @@ def main():
         print(e)
         sys.exit(2)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()
