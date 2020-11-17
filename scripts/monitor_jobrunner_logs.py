@@ -72,9 +72,16 @@ job_runner_out_fp = "../_condor_stdout"
 
 
 def job_contains_unhandled_error():
+    """
+    Return true if an unhandled error or the sanic root server stopped.
+    This causes the PID to get killed and the job to clear out the slot
+    """
     unhandled_error_pattern = r"ERROR:root:An unhandled error was encountered"
+    job_finished_pattern = r"INFO:sanic.root:Server Stopped"
     with open(job_runner_error_fp, "r", encoding="utf-8") as f:
         if unhandled_error_pattern in f.read():
+            return True
+        if job_finished_pattern in f.read():
             return True
     return False
 
