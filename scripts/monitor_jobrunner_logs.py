@@ -100,7 +100,7 @@ def main():
         sys.exit(1)
 
     while True:
-        time.sleep(5)
+        time.sleep(60)
         if job_contains_unhandled_error():
 
             logger = Logger(ee2_url=ee2_url, job_id=job_id)
