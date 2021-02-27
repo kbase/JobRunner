@@ -2,6 +2,7 @@ import logging
 import os
 import signal
 import socket
+import sys
 from multiprocessing import Process, Queue
 from queue import Empty
 from socket import gethostname
@@ -19,8 +20,10 @@ from .callback_server import start_callback_server
 from .exceptions import CantRestartJob
 from .logger import Logger
 from .provenance import Provenance
+from .mock_ee2 import Mock_EE2
 
-logging.basicConfig(format="%(created)s %(levelname)s: %(message)s", level=logging.INFO)
+logging.basicConfig(format="%(created)s %(levelname)s: %(message)s",
+                    level=logging.INFO)
 
 
 class JobRunner(object):
@@ -30,12 +33,16 @@ class JobRunner(object):
     to support subjobs and provenenace calls.
     """
 
-    def __init__(self, config, ee2_url, job_id, token, admin_token, debug=False):
+    def __init__(self, config, ee2_url, job_id, token, admin_token,
+                 debug=False, port=None):
         """
         inputs: config dictionary, EE2 URL, Job id, Token, Admin Token
         """
 
-        self.ee2 = EE2(url=ee2_url, timeout=60)
+        if ee2_url:
+            self.ee2 = EE2(url=ee2_url, timeout=60)
+        else:
+            self.ee2 = Mock_EE2()
         self.logger = Logger(ee2_url, job_id, ee2=self.ee2)
         self.token = token
         self.client_group = os.environ.get("CLIENTGROUP", "None")
@@ -50,7 +57,7 @@ class JobRunner(object):
         self.jr_queue = Queue()
         self.callback_queue = Queue()
         self.prov = None
-        self._init_callback_url()
+        self._init_callback_url(port=port)
         self.debug = debug
         self.mr = MethodRunner(
             self.config, job_id, logger=self.logger, debug=self.debug
@@ -90,7 +97,10 @@ class JobRunner(object):
         return True
 
     def _init_workdir(self):
-        """ Check to see for existence of scratch dir: /mnt/awe/condor or /cdr/ """
+        """
+        Check to see for existence of scratch dir:
+        e.g. /mnt/awe/condor or /cdr/
+        """
         if not os.path.exists(self.workdir):
             self.logger.error("Missing workdir")
             raise OSError("Missing Working Directory")
@@ -231,7 +241,7 @@ class JobRunner(object):
                 _sleep(5)
                 return {"error": "Canceled or unexpected error"}
 
-    def _init_callback_url(self):
+    def _init_callback_url(self, port=None):
         # Find a free port and Start up callback server
         if os.environ.get("CALLBACK_IP") is not None:
             self.ip = os.environ.get("CALLBACK_IP")
@@ -244,7 +254,10 @@ class JobRunner(object):
         sock = socket.socket()
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         sock.bind(("", 0))
-        self.port = sock.getsockname()[1]
+        if port:
+            self.port = port
+        else:
+            self.port = sock.getsockname()[1]
         sock.close()
         url = "http://{}:{}/".format(self.ip, self.port)
         self.logger.log("Job runner recieved Callback URL {}".format(url))
@@ -402,3 +415,70 @@ class JobRunner(object):
         # Run docker or shifter	and keep a record of container id and
         #  subjob container ids
         # Run a job shutdown hook
+
+    def callback(self):
+        """
+        This method just does the minimal steps to run the call back server.
+        """
+        running_msg = f"Running job {self.job_id} ({os.environ.get('CONDOR_ID')}) on {self.hostname} ({self.ip}) in {self.workdir}"
+
+        self.logger.log(running_msg)
+        logging.info(running_msg)
+
+        # Check to see if the job was run before or canceled already.
+        # If so, log it
+        logging.info("About to check job status")
+        if not self._check_job_status():
+            error_msg = "Job already run or terminated"
+            self.logger.error(error_msg)
+            logging.error(error_msg)
+            raise CantRestartJob(error_msg)
+        base = self.config['catalog-service-url'].replace('catalog', '')
+        config = {
+            'kbase-endpoint': base,
+            'external-url': base + 'ee2',
+            'shock-url': base + 'shock-api',
+            'handle-url': base + 'handle_service',
+            'srv-wiz-url': base + 'service_wizard',
+            'auth-service-url': base + 'auth/api/legacy/KBase/Sessions/Login',
+            'auth-service-url-v2': base + 'auth/api/V2/token',
+            'auth-service-url-allow-insecure': False,
+            'scratch': '/kb/module/work/tmp',
+            'workspace-url': base + 'ws',
+            'ref_data_base': '/tmp/db'
+        }
+        config["job_id"] = self.job_id
+        eever = config.get('ee.server.version')
+        self.logger.log(
+            f"Server version of Execution Engine: {eever}"
+        )
+
+        job_params = {
+            'method': 'sdk.sdk',
+            'service_ver': '1.0',
+            'params': {}
+        }
+
+        self.prov = Provenance(job_params)
+        logging.info("Initing work dir")
+        self._init_workdir()
+        job_dir = self.workdir
+        self.mr._init_workdir(config, job_dir, job_params)
+        config["workdir"] = self.workdir
+        config["user"] = self._validate_token()
+
+        logging.info("Setting provenance")
+
+        # Start the callback server
+        logging.info("Starting callback server")
+        cb_args = [
+            self.ip,
+            self.port,
+            self.jr_queue,
+            self.callback_queue,
+            self.token,
+            self.bypass_token,
+        ]
+        self.cbs = Process(target=start_callback_server, args=cb_args)
+        self.cbs.start()
+        self._watch(config)
