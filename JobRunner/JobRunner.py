@@ -423,17 +423,10 @@ class JobRunner(object):
         running_msg = f"Running job {self.job_id} ({os.environ.get('CONDOR_ID')}) on {self.hostname} ({self.ip}) in {self.workdir}"
 
         self.logger.log(running_msg)
-        logging.info(running_msg)
 
-        # Check to see if the job was run before or canceled already.
-        # If so, log it
-        logging.info("About to check job status")
-        if not self._check_job_status():
-            error_msg = "Job already run or terminated"
-            self.logger.error(error_msg)
-            logging.error(error_msg)
-            raise CantRestartJob(error_msg)
         base = self.config['catalog-service-url'].replace('catalog', '')
+        # TODO: Some of this should come from some config file that may live
+        #       in the module being tested.
         config = {
             'kbase-endpoint': base,
             'external-url': base + 'ee2',
@@ -448,10 +441,6 @@ class JobRunner(object):
             'ref_data_base': '/tmp/db'
         }
         config["job_id"] = self.job_id
-        eever = config.get('ee.server.version')
-        self.logger.log(
-            f"Server version of Execution Engine: {eever}"
-        )
 
         job_params = {
             'method': 'sdk.sdk',
@@ -460,14 +449,12 @@ class JobRunner(object):
         }
 
         self.prov = Provenance(job_params)
-        logging.info("Initing work dir")
         self._init_workdir()
         job_dir = self.workdir
+        # TODO: This is calling a private method.
         self.mr._init_workdir(config, job_dir, job_params)
         config["workdir"] = self.workdir
         config["user"] = self._validate_token()
-
-        logging.info("Setting provenance")
 
         # Start the callback server
         logging.info("Starting callback server")

@@ -16,9 +16,9 @@ class Mock_EE2(object):
     def add_job_logs(self, params, lines):
         for line in lines:
             if line['is_error'] == 1:
-                sys.stderr.write(line['line'])
+                sys.stderr.write(line['line']+'\n')
             else:
-                sys.stdout.write(line['line'])
+                sys.stdout.write(line['line']+'\n')
 
     def get_job_params(self, params):
         return None
