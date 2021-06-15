@@ -145,9 +145,9 @@ def main():
 
     #Expect the url to be something like kbase.us/services/ee2 or /services/ee2-nr
     ee2_suffix = ee2_url.split("/")[-1]
-    config["catalog-service-url"] = ee2_url.replace(ee2_suffix, "/catalog")
+    config["catalog-service-url"] = ee2_url.replace(ee2_suffix, "catalog")
     auth_ext = "auth/api/legacy/KBase/Sessions/Login"
-    config["auth-service-url"] = ee2_url.replace(ee2_suffix, f"/{auth_ext}")
+    config["auth-service-url"] = ee2_url.replace(ee2_suffix, f"{auth_ext}")
 
     # WARNING: Condor job environment may not inherit from system ENV
     if "USE_SHIFTER" in os.environ:
