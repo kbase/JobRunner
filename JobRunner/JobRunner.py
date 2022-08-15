@@ -445,7 +445,7 @@ class JobRunner(object):
         job_params = {
             'method': 'sdk.sdk',
             'service_ver': '1.0',
-            'params': {}
+            'params': [{}]
         }
 
         self.prov = Provenance(job_params)
