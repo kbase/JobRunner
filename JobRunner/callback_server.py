@@ -60,16 +60,16 @@ def _check_finished(info=None):
 
 
 def _check_rpc_token(token):
+    print("token checking")
     if token != app.config.get("token"):
-        print("token checking")
+        print("token is not right")
         if app.config.get("bypass_token"):
             print("Bypass token")
             pass
         else:
             # abort(401)
             print("raise Exception")
-            # raise SanicException(status_code=401)
-            pass
+            raise SanicException(status_code=401)
 
 
 def _handle_provenance():
