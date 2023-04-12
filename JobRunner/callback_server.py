@@ -4,7 +4,7 @@ from queue import Empty
 
 from sanic import Sanic
 from sanic.config import Config
-from sanic.exceptions import abort
+from sanic.exceptions import SanicException
 from sanic.log import logger
 from sanic.response import json
 
@@ -61,11 +61,14 @@ def _check_finished(info=None):
 
 def _check_rpc_token(token):
     if token != app.config.get("token"):
+        print("token checking")
         if app.config.get("bypass_token"):
+            print("Bypass token")
             pass
         else:
-            #raise SanicException(status_code=401)
-            abort(401)
+            # abort(401)
+            print("raise Exception")
+            raise SanicException(status_code=401)
 
 
 def _handle_provenance():
@@ -83,8 +86,8 @@ def _handle_submit(module, method, data, token):
 
 def _handle_checkjob(data):
     if "params" not in data:
-        #raise SanicException(status_code=404)
-        abort(404)
+        # abort(404)
+        raise SanicException(status_code=404)
     job_id = data["params"][0]
     _check_finished(f"Checkjob for {job_id}")
     resp = {"finished": 0}
