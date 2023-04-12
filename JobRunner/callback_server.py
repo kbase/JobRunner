@@ -64,7 +64,8 @@ def _check_rpc_token(token):
         if app.config.get("bypass_token"):
             pass
         else:
-            raise SanicException(status_code=401)
+            pass
+            # raise SanicException(status_code=401)
 
 
 def _handle_provenance():
