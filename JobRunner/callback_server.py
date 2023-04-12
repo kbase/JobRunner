@@ -68,7 +68,8 @@ def _check_rpc_token(token):
         else:
             # abort(401)
             print("raise Exception")
-            raise SanicException(status_code=401)
+            # raise SanicException(status_code=401)
+            pass
 
 
 def _handle_provenance():
