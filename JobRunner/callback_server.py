@@ -70,7 +70,7 @@ def _check_rpc_token(token):
         print("token passed in is: ", token)
         print("token in app.config is: ", app.config.get("TOKEN"))
         print("token is not right")
-        if app.config.get("BYPASS_TOKEN"):
+        if app.config.get("BYPASS_TOKEN", True):
             print("Bypass token")
             pass
         else:
