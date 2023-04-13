@@ -28,7 +28,10 @@ def start_callback_server(ip, port, out_queue, in_queue, token, bypass_token):
         "KEEP_ALIVE_TIMEOUT": timeout,
         "REQUEST_MAX_SIZE": max_size_bytes,
     }
+
+    print("before update: ", conf)
     app.config.update(conf)
+    print("last: ", app.config)
     #app.run(host=ip, port=port, debug=False, access_log=False)
     app.run(host=ip, port=port, debug=True, access_log=False)
 
