@@ -63,6 +63,8 @@ def _check_finished(info=None):
 def _check_rpc_token(token):
     print("token checking")
     if token != app.config.get("token"):
+        print("token passed in is: ", token)
+        print("token in app.config is: ", app.config.get("token"))
         print("token is not right")
         if app.config.get("bypass_token"):
             print("Bypass token")
