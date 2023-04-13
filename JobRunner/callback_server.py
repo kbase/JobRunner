@@ -29,7 +29,8 @@ def start_callback_server(ip, port, out_queue, in_queue, token, bypass_token):
         "REQUEST_MAX_SIZE": max_size_bytes,
     }
     app.config.update(conf)
-    app.run(host=ip, port=port, debug=False, access_log=False)
+    #app.run(host=ip, port=port, debug=False, access_log=False)
+    app.run(host=ip, port=port, debug=True, access_log=False)
 
 
 @app.route("/", methods=["GET", "POST"])
