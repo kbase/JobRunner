@@ -11,7 +11,7 @@ from sanic.response import json
 Config.SANIC_REQUEST_TIMEOUT = 300
 
 app = Sanic(name="myApp")
-c = app.config
+c = Config()
 outputs = dict()
 prov = []
 
@@ -32,6 +32,7 @@ def start_callback_server(ip, port, out_queue, in_queue, token, bypass_token):
 
     print("before update: ", conf)
     #app.config.update(conf)
+    app.config.update_config(conf)
     c.update_config(conf)
     print("after update: ", app.config)
     #app.run(host=ip, port=port, debug=False, access_log=False)
