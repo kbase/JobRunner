@@ -16,7 +16,6 @@ prov = []
 
 
 def start_callback_server(ip, port, out_queue, in_queue, token, bypass_token):
-    global app
     timeout = 3600
     max_size_bytes = 100000000000
     conf = {
@@ -50,7 +49,6 @@ async def root(request):
 
 def _check_finished(info=None):
     global prov
-    global app
     logger.debug(info)
     in_q = app.config["in_q"]
     try:
@@ -66,7 +64,6 @@ def _check_finished(info=None):
 
 
 def _check_rpc_token(token):
-    global app
     print("token checking")
     print(app.config)
     if token != app.config.get("token"):
@@ -88,7 +85,6 @@ def _handle_provenance():
 
 
 def _handle_submit(module, method, data, token):
-    global app
     _check_rpc_token(token)
     job_id = str(uuid.uuid1())
     data["method"] = "%s.%s" % (module, method[1:-7])
@@ -120,7 +116,7 @@ async def _process_rpc(data, token):
     """
     Handle KBase SDK App Client Requests
     """
-    global app
+    
     (module, method) = data["method"].split(".")
     # async submit job
     if method.startswith("_") and method.endswith("_submit"):
