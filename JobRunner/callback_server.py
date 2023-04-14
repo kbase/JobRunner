@@ -40,6 +40,7 @@ def start_callback_server(ip, port, out_queue, in_queue, token, bypass_token):
     app.config["KEEP_ALIVE_TIMEOUT"] = timeout
     app.config["REQUEST_MAX_SIZE"] = max_size_bytes
 
+    global config_dict
     config_dict["TOKEN"] = token
     config_dict["OUT_Q"] = out_queue
     config_dict["IN_Q"] = in_queue
