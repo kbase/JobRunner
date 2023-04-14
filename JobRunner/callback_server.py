@@ -12,6 +12,7 @@ Config.SANIC_REQUEST_TIMEOUT = 300
 
 app = Sanic(name="myApp")
 outputs = dict()
+config_dict = {}
 prov = []
 
 
@@ -38,6 +39,12 @@ def start_callback_server(ip, port, out_queue, in_queue, token, bypass_token):
     app.config["REQUEST_TIMEOUT"] = timeout
     app.config["KEEP_ALIVE_TIMEOUT"] = timeout
     app.config["REQUEST_MAX_SIZE"] = max_size_bytes
+
+    config_dict["TOKEN"] = token
+    config_dict["OUT_Q"] = out_queue
+    config_dict["IN_Q"] = in_queue
+    config_dict["BYPASS_TOKEN"] = bypass_token
+
     print("after update: ", app.config)
     #app.run(host=ip, port=port, debug=False, access_log=False)
     app.run(host=ip, port=port, debug=True, access_log=False)
@@ -75,6 +82,7 @@ def _check_finished(info=None):
 def _check_rpc_token(token):
     print("token checking")
     print("app.config is: ", app.config)
+    print("config_dict is: ", config_dict)
     if token != app.config.get("TOKEN"):
         print("token passed in is: ", token)
         print("token in app.config is: ", app.config.get("TOKEN"))
