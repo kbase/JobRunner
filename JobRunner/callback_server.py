@@ -13,7 +13,6 @@ Config.SANIC_REQUEST_TIMEOUT = 300
 
 app = Sanic(name="myApp")
 outputs = dict()
-config_dict = {}
 prov = []
 
 
@@ -32,6 +31,7 @@ def start_callback_server(ip, port, out_queue, in_queue, token, bypass_token):
     }
 
     print("before update: ", conf)
+
     app.config["TOKEN"] = token
     app.config["OUT_Q"] = out_queue
     app.config["IN_Q"] = in_queue
@@ -40,12 +40,6 @@ def start_callback_server(ip, port, out_queue, in_queue, token, bypass_token):
     app.config["REQUEST_TIMEOUT"] = timeout
     app.config["KEEP_ALIVE_TIMEOUT"] = timeout
     app.config["REQUEST_MAX_SIZE"] = max_size_bytes
-
-   
-    os.environ["TOKEN"] = token
-    os.environ["OUT_Q"] = out_queue
-    os.environ["IN_Q"] = in_queue
-    os.environ["BYPASS_TOKEN"] = bypass_token
 
     print("after update: ", app.config)
     #app.run(host=ip, port=port, debug=False, access_log=False)
@@ -68,7 +62,7 @@ async def root(request):
 def _check_finished(info=None):
     global prov
     logger.debug(info)
-    in_q = app.config.get("IN_Q", os.environ["IN_Q"])
+    in_q = app.config["IN_Q"]
     try:
         # Flush the queue
         while True:
@@ -83,11 +77,11 @@ def _check_finished(info=None):
 
 def _check_rpc_token(token):
     print("token checking")
-    if token != app.config.get("TOKEN", os.environ["TOKEN"]):
+    if token != app.config.get("TOKEN"):
         print("token passed in is: ", token)
         print("token in app.config is: ", app.config.get("TOKEN"))
         print("token is not right")
-        if app.config.get("BYPASS_TOKEN", os.environ["BYPASS_TOKEN"]):
+        if app.config.get("BYPASS_TOKEN"):
             print("Bypass token")
             pass
         else:
@@ -105,7 +99,7 @@ def _handle_submit(module, method, data, token):
     _check_rpc_token(token)
     job_id = str(uuid.uuid1())
     data["method"] = "%s.%s" % (module, method[1:-7])
-    app.config.get("OUT_Q", os.environ["OUT_Q"]).put(["submit", job_id, data])
+    app.config["OUT_Q"].put(["submit", job_id, data])
     return {"result": [job_id]}
 
 
@@ -149,7 +143,7 @@ async def _process_rpc(data, token):
         _check_rpc_token(token)
         job_id = str(uuid.uuid1())
         data["method"] = "%s.%s" % (module, method)
-        app.config.get("OUT_Q", os.environ["OUT_Q"]).put(["submit", job_id, data])
+        app.config["OUT_Q"].put(["submit", job_id, data])
         try:
             while True:
                 _check_finished(f'synk check for {data["method"]} for {job_id}')
