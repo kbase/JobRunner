@@ -11,12 +11,12 @@ from sanic.response import json
 Config.SANIC_REQUEST_TIMEOUT = 300
 
 app = Sanic(name="myApp")
+c = app.config
 outputs = dict()
 prov = []
 
 
 def start_callback_server(ip, port, out_queue, in_queue, token, bypass_token):
-    global app
     timeout = 3600
     max_size_bytes = 100000000000
     conf = {
@@ -32,7 +32,7 @@ def start_callback_server(ip, port, out_queue, in_queue, token, bypass_token):
 
     print("before update: ", conf)
     #app.config.update(conf)
-    app.config.update_config(conf)
+    c.update_config(conf)
     print("after update: ", app.config)
     #app.run(host=ip, port=port, debug=False, access_log=False)
     app.run(host=ip, port=port, debug=True, access_log=False)
@@ -67,7 +67,8 @@ def _check_finished(info=None):
 
 def _check_rpc_token(token):
     print("token checking")
-    print(app.config)
+    print("c is: ", c)
+    print("app.config is: ", app.config)
     if token != app.config.get("TOKEN"):
         print("token passed in is: ", token)
         print("token in app.config is: ", app.config.get("TOKEN"))
