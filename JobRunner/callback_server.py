@@ -47,6 +47,7 @@ def start_callback_server(ip, port, out_queue, in_queue, token, bypass_token):
 async def root(request):
     data = request.json
     print("data is: ", data)
+    print("request header is: ", request.headers)
     if request.method == "POST" and data is not None and "method" in data:
         token = request.headers.get("Authorization")
         response = await _process_rpc(data, token)
