@@ -3,12 +3,12 @@ import uuid
 from queue import Empty
 
 from sanic import Sanic
-# from sanic.config import Config
+from sanic.config import Config
 from sanic.exceptions import SanicException
 from sanic.log import logger
 from sanic.response import json
 
-# Config.SANIC_REQUEST_TIMEOUT = 300
+Config.SANIC_REQUEST_TIMEOUT = 300
 
 app = Sanic(name="myApp")
 outputs = dict()
@@ -16,6 +16,7 @@ prov = []
 
 
 def start_callback_server(ip, port, out_queue, in_queue, token, bypass_token):
+    global app
     timeout = 3600
     max_size_bytes = 100000000000
     conf = {
