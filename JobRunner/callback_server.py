@@ -30,8 +30,14 @@ def start_callback_server(ip, port, out_queue, in_queue, token, bypass_token):
     }
 
     print("before update: ", conf)
-    for key, val in conf.items():
-        app.config[key] = val
+    app.config["TOKEN"] = token
+    app.config["OUT_Q"] = out_queue
+    app.config["IN_Q"] = in_queue
+    app.config["BYPASS_TOKEN"] = bypass_token
+    app.config["RESPONSE_TIMEOUT"] = timeout
+    app.config["REQUEST_TIMEOUT"] = timeout
+    app.config["KEEP_ALIVE_TIMEOUT"] = timeout
+    app.config["REQUEST_MAX_SIZE"] = max_size_bytes
     print("after update: ", app.config)
     #app.run(host=ip, port=port, debug=False, access_log=False)
     app.run(host=ip, port=port, debug=True, access_log=False)
