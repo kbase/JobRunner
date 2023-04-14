@@ -3,12 +3,12 @@ import uuid
 from queue import Empty
 
 from sanic import Sanic
-from sanic.config import Config
+# from sanic.config import Config
 from sanic.exceptions import SanicException
 from sanic.log import logger
 from sanic.response import json
 
-Config.SANIC_REQUEST_TIMEOUT = 300
+# Config.SANIC_REQUEST_TIMEOUT = 300
 
 app = Sanic(name="myApp")
 outputs = dict()
