@@ -17,31 +17,31 @@ prov = []
 
 
 def start_callback_server(ip, port, out_queue, in_queue, token, bypass_token):
-    timeout = 3600
-    max_size_bytes = 100000000000
-    conf = {
-        "TOKEN": token,
-        "OUT_Q": out_queue,
-        "IN_Q": in_queue,
-        "BYPASS_TOKEN": bypass_token,
-        "RESPONSE_TIMEOUT": timeout,
-        "REQUEST_TIMEOUT": timeout,
-        "KEEP_ALIVE_TIMEOUT": timeout,
-        "REQUEST_MAX_SIZE": max_size_bytes,
-    }
+    # timeout = 3600
+    # max_size_bytes = 100000000000
+    # conf = {
+    #     "TOKEN": token,
+    #     "OUT_Q": out_queue,
+    #     "IN_Q": in_queue,
+    #     "BYPASS_TOKEN": bypass_token,
+    #     "RESPONSE_TIMEOUT": timeout,
+    #     "REQUEST_TIMEOUT": timeout,
+    #     "KEEP_ALIVE_TIMEOUT": timeout,
+    #     "REQUEST_MAX_SIZE": max_size_bytes,
+    # }
 
-    print("before update: ", conf)
+    # print("before update: ", conf)
 
-    app.config["TOKEN"] = token
-    app.config["OUT_Q"] = out_queue
-    app.config["IN_Q"] = in_queue
-    app.config["BYPASS_TOKEN"] = bypass_token
-    app.config["RESPONSE_TIMEOUT"] = timeout
-    app.config["REQUEST_TIMEOUT"] = timeout
-    app.config["KEEP_ALIVE_TIMEOUT"] = timeout
-    app.config["REQUEST_MAX_SIZE"] = max_size_bytes
+    # app.config["TOKEN"] = token
+    # app.config["OUT_Q"] = out_queue
+    # app.config["IN_Q"] = in_queue
+    # app.config["BYPASS_TOKEN"] = bypass_token
+    # app.config["RESPONSE_TIMEOUT"] = timeout
+    # app.config["REQUEST_TIMEOUT"] = timeout
+    # app.config["KEEP_ALIVE_TIMEOUT"] = timeout
+    # app.config["REQUEST_MAX_SIZE"] = max_size_bytes
 
-    print("after update: ", app.config)
+    # print("after update: ", app.config)
     #app.run(host=ip, port=port, debug=False, access_log=False)
     app.run(host=ip, port=port, debug=True, access_log=False)
 
@@ -77,6 +77,7 @@ def _check_finished(info=None):
 
 def _check_rpc_token(token):
     print("token checking")
+    print("app.config is: ", app.config)
     if token != app.config.get("TOKEN"):
         print("token passed in is: ", token)
         print("token in app.config is: ", app.config.get("TOKEN"))

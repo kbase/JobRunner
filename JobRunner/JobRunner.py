@@ -22,6 +22,8 @@ from .logger import Logger
 from .provenance import Provenance
 from .mock_ee2 import Mock_EE2
 
+from sanic import Sanic
+
 logging.basicConfig(format="%(created)s %(levelname)s: %(message)s",
                     level=logging.INFO)
 
@@ -466,6 +468,24 @@ class JobRunner(object):
             self.token,
             self.bypass_token,
         ]
+
+        from .callback_server import app
+        # THIS DOES WORK
+        timeout = 3600
+        max_size_bytes = 100000000000
+        conf = {
+            "TOKEN": self.token,
+            "OUT_Q": self.jr_queue,
+            "IN_Q": self.callback_queue,
+            "BYPASS_TOKEN": self.bypass_token,
+            "RESPONSE_TIMEOUT": timeout,
+            "REQUEST_TIMEOUT": timeout,
+            "KEEP_ALIVE_TIMEOUT": timeout,
+            "REQUEST_MAX_SIZE": max_size_bytes,
+        }
+        app.config.update(conf)
+        print("after update: ", app.config)
+
         self.cbs = Process(target=start_callback_server, args=cb_args)
         self.cbs.start()
         self._watch(config)
