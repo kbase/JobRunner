@@ -469,7 +469,7 @@ class JobRunner(object):
             self.bypass_token,
         ]
 
-        from .callback_server import app
+        app = Sanic.get_app()
         # THIS DOES WORK
         timeout = 3600
         max_size_bytes = 100000000000
@@ -483,7 +483,7 @@ class JobRunner(object):
             "KEEP_ALIVE_TIMEOUT": timeout,
             "REQUEST_MAX_SIZE": max_size_bytes,
         }
-        app.config.update(conf)
+        app.config.update_config(conf)
         print("after update: ", app.config)
 
         self.cbs = Process(target=start_callback_server, args=cb_args)
