@@ -469,22 +469,22 @@ class JobRunner(object):
             self.bypass_token,
         ]
 
-        app = Sanic.get_app()
-        # THIS DOES WORK
-        timeout = 3600
-        max_size_bytes = 100000000000
-        conf = {
-            "TOKEN": self.token,
-            "OUT_Q": self.jr_queue,
-            "IN_Q": self.callback_queue,
-            "BYPASS_TOKEN": self.bypass_token,
-            "RESPONSE_TIMEOUT": timeout,
-            "REQUEST_TIMEOUT": timeout,
-            "KEEP_ALIVE_TIMEOUT": timeout,
-            "REQUEST_MAX_SIZE": max_size_bytes,
-        }
-        app.config.update_config(conf)
-        print("after update: ", app.config)
+        # app = Sanic.get_app()
+        # # THIS DOES WORK
+        # timeout = 3600
+        # max_size_bytes = 100000000000
+        # conf = {
+        #     "TOKEN": self.token,
+        #     "OUT_Q": self.jr_queue,
+        #     "IN_Q": self.callback_queue,
+        #     "BYPASS_TOKEN": self.bypass_token,
+        #     "RESPONSE_TIMEOUT": timeout,
+        #     "REQUEST_TIMEOUT": timeout,
+        #     "KEEP_ALIVE_TIMEOUT": timeout,
+        #     "REQUEST_MAX_SIZE": max_size_bytes,
+        # }
+        # app.config.update_config(conf)
+        # print("after update: ", app.config)
 
         self.cbs = Process(target=start_callback_server, args=cb_args)
         self.cbs.start()
