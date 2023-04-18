@@ -9,14 +9,29 @@ from sanic.exceptions import SanicException
 from sanic.log import logger
 from sanic.response import json
 
+from functools import partial
+from sanic.worker.loader import AppLoader
+
+
 Config.SANIC_REQUEST_TIMEOUT = 300
 
 # app = Sanic.get_app(name="myApp", force_create=True)
 outputs = dict()
 prov = []
 
+def create_app(app_name):
+    app = Sanic(app_name)
+    attach_endpoints(app)
+    return app
+
 def start_callback_server(ip, port, out_queue, in_queue, token, bypass_token):
-    app = Sanic.get_app(name="myApp", force_create=True)
+
+    app_name = "MyApp"
+    loader = AppLoader(factory=partial(create_app, app_name))
+    app = loader.load()
+ 
+
+  
     timeout = 3600
     max_size_bytes = 100000000000
     conf = {
@@ -53,23 +68,23 @@ def start_callback_server(ip, port, out_queue, in_queue, token, bypass_token):
 
     print("after update: ", app.config)
 
-    app.add_route(root, '/', methods=["GET", "POST"])
-
     #app.run(host=ip, port=port, debug=False, access_log=False)
-    app.run(host=ip, port=port, debug=True, access_log=False)
+    #app.run(host=ip, port=port, debug=True, access_log=False)
+    app.prepare(host=ip, port=port, debug=True, access_log=False)
+    Sanic.serve(primary=app, app_loader=loader)
 
-
-#@app.route("/", methods=["GET", "POST"])
-async def root(request):
-    data = request.json
-    print("data is: ", data)
-    print("request header is: ", request.headers)
-    if request.method == "POST" and data is not None and "method" in data:
-        token = request.headers.get("Authorization")
-        response = await _process_rpc(data, token)
-        status = 500 if "error" in response else 200
-        return json(response, status=status)
-    return json([{}])
+def attach_endpoints(app):
+    @app.route("/", methods=["GET", "POST"])
+    async def root(request):
+        data = request.json
+        print("data is: ", data)
+        print("request header is: ", request.headers)
+        if request.method == "POST" and data is not None and "method" in data:
+            token = request.headers.get("Authorization")
+            response = await _process_rpc(data, token)
+            status = 500 if "error" in response else 200
+            return json(response, status=status)
+        return json([{}])
 
 
 def _check_finished(info=None):
