@@ -11,11 +11,12 @@ from sanic.response import json
 
 Config.SANIC_REQUEST_TIMEOUT = 300
 
-app = Sanic.get_app(name="myApp", force_create=True)
+# app = Sanic.get_app(name="myApp", force_create=True)
 outputs = dict()
 prov = []
 
 def start_callback_server(ip, port, out_queue, in_queue, token, bypass_token):
+    app = Sanic.get_app(name="myApp", force_create=True)
     timeout = 3600
     max_size_bytes = 100000000000
     conf = {
@@ -52,13 +53,13 @@ def start_callback_server(ip, port, out_queue, in_queue, token, bypass_token):
 
     print("after update: ", app.config)
 
-    app.add_route(root, '/', methods=["GET", "POST"])
+    #app.add_route(root, '/', methods=["GET", "POST"])
 
     #app.run(host=ip, port=port, debug=False, access_log=False)
     app.run(host=ip, port=port, debug=True, access_log=False)
 
 
-#@app.route("/", methods=["GET", "POST"])
+@app.route("/", methods=["GET", "POST"])
 async def root(request):
     data = request.json
     print("data is: ", data)
@@ -72,6 +73,7 @@ async def root(request):
 
 
 def _check_finished(info=None):
+    app = Sanic.get_app(name="myApp")
     global prov
     logger.debug(info)
     in_q = app.config["IN_Q"]
@@ -88,6 +90,7 @@ def _check_finished(info=None):
 
 
 def _check_rpc_token(token):
+    app = Sanic.get_app(name="myApp")
     print("token checking")
     print("app.config is: ", app.config)
     print("app.ctx is: ", app.ctx)
@@ -110,6 +113,7 @@ def _handle_provenance():
 
 
 def _handle_submit(module, method, data, token):
+    app = Sanic.get_app(name="myApp")
     _check_rpc_token(token)
     job_id = str(uuid.uuid1())
     data["method"] = "%s.%s" % (module, method[1:-7])
@@ -154,6 +158,7 @@ async def _process_rpc(data, token):
         return _handle_provenance()
     else:
         # Sync Job
+        app = Sanic.get_app(name="myApp")
         _check_rpc_token(token)
         job_id = str(uuid.uuid1())
         data["method"] = "%s.%s" % (module, method)
