@@ -53,12 +53,11 @@ def start_callback_server(ip, port, out_queue, in_queue, token, bypass_token):
     app.config["REQUEST_MAX_SIZE"] = max_size_bytes
 
     # print("after update: ", app.config)
-    print("adding route now ...")
-    app.add_route(root, '/', methods=["GET", "POST"])
+    # print("adding route now ...")
+    # app.add_route(root, '/', methods=["GET", "POST"])
 
     #app.run(host=ip, port=port, debug=False, access_log=False)
     app.run(host=ip, port=port, debug=True, access_log=False)
-
 
 async def root(request):
     data = request.json
@@ -182,3 +181,5 @@ async def _process_rpc(data, token):
                 "finished": 1,
             }
             return outputs[job_id]
+
+app.add_route(root, '/', methods=["GET", "POST"])
