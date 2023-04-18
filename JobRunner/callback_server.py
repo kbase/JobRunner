@@ -52,13 +52,13 @@ def start_callback_server(ip, port, out_queue, in_queue, token, bypass_token):
 
     print("after update: ", app.config)
 
-    app.add_route(root, '/', methods=["GET", "POST"])
+    #app.add_route(root, '/', methods=["GET", "POST"])
 
     #app.run(host=ip, port=port, debug=False, access_log=False)
     app.run(host=ip, port=port, debug=True, access_log=False)
 
 
-# @app.route("/", methods=["GET", "POST"])
+#@app.route("/", methods=["GET", "POST"])
 async def root(request):
     data = request.json
     print("data is: ", data)
