@@ -483,6 +483,7 @@ class JobRunner(object):
             "KEEP_ALIVE_TIMEOUT": timeout,
             "REQUEST_MAX_SIZE": max_size_bytes,
         }
+        app.shared_ctx.token = self.token
         app.config.update_config(conf)
         print("after update: ", app.config)
         self.cbs = Process(target=start_callback_server, args=cb_args)

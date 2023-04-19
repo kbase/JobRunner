@@ -94,6 +94,7 @@ def _check_finished(info=None):
 
 def _check_rpc_token(token):
     print("token checking")
+    print("app.shared_ctx.token is: ", app.shared_ctx.token)
     print("app.config in rpc token is: ", app.config)
     # print("app.ctx is: ", app.ctx)
     if token != app.config.get("TOKEN"):
