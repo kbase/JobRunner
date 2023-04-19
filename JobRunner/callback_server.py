@@ -189,5 +189,3 @@ async def _process_rpc(data, token):
                 "finished": 1,
             }
             return outputs[job_id]
-
-app.add_route(root, '/', methods=["GET", "POST"])
