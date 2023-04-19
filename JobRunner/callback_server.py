@@ -29,7 +29,7 @@ def create_app(config):
 def start_callback_server(config):
     loader = AppLoader(factory=partial(create_app, config))
     app = loader.load()
-    app.prepare(host=config.get("IP"), port=config.get("PORT"), dev=True)
+    app.prepare(dev=True)
     Sanic.serve(primary=app, app_loader=loader)
   
     # timeout = 3600
