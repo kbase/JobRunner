@@ -55,7 +55,7 @@ def start_callback_server(ip, port, out_queue, in_queue, token, bypass_token):
     # app.config["KEEP_ALIVE_TIMEOUT"] = timeout
     # app.config["REQUEST_MAX_SIZE"] = max_size_bytes
 
-    print("app.config is: ", app.config)
+    # print("app.config is: ", app.config)
     # print("adding route now ...")
     # app.add_route(root, '/', methods=["GET", "POST"])
 
@@ -79,7 +79,8 @@ async def root(request):
 def _check_finished(info=None):
     global prov
     logger.debug(info)
-    in_q = app.config["IN_Q"]
+    # in_q = app.config["IN_Q"]
+    in_q = app.shared_ctx.IN_Q
     try:
         # Flush the queue
         while True:
@@ -94,14 +95,16 @@ def _check_finished(info=None):
 
 def _check_rpc_token(token):
     print("token checking")
-    print("app.shared_ctx.token is: ", app.shared_ctx.token)
-    print("app.config in rpc token is: ", app.config)
+    # print("app.shared_ctx.token is: ", app.shared_ctx.token)
+    # print("app.config in rpc token is: ", app.config)
     # print("app.ctx is: ", app.ctx)
-    if token != app.config.get("TOKEN"):
+    # if token != app.config.get("TOKEN"):
+    if token != app.shared_ctx.TOKEN:
         print("token passed in is: ", token)
-        print("token in app.config is: ", app.config.get("TOKEN"))
+        print("token in app.shared_ctx.TOKEN is: ", app.shared_ctx.TOKEN)
         print("token is not right")
-        if app.config.get("BYPASS_TOKEN"):
+        # if app.config.get("BYPASS_TOKEN"):
+        if app.shared_ctx.BYPASS_TOKEN:
             print("Bypass token")
             pass
         else:
@@ -119,7 +122,8 @@ def _handle_submit(module, method, data, token):
     _check_rpc_token(token)
     job_id = str(uuid.uuid1())
     data["method"] = "%s.%s" % (module, method[1:-7])
-    app.config["OUT_Q"].put(["submit", job_id, data])
+    # app.config["OUT_Q"].put(["submit", job_id, data])
+    app.shared_ctx.OUT_Q.put(["submit", job_id, data])
     return {"result": [job_id]}
 
 
@@ -163,7 +167,8 @@ async def _process_rpc(data, token):
         _check_rpc_token(token)
         job_id = str(uuid.uuid1())
         data["method"] = "%s.%s" % (module, method)
-        app.config["OUT_Q"].put(["submit", job_id, data])
+        # app.config["OUT_Q"].put(["submit", job_id, data])
+        app.shared_ctx.OUT_Q.put(["submit", job_id, data])
         try:
             while True:
                 _check_finished(f'synk check for {data["method"]} for {job_id}')
