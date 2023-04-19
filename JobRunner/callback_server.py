@@ -16,6 +16,9 @@ app = Sanic(name="myApp")
 outputs = dict()
 prov = []
 
+dist = {}
+
+
 def start_callback_server(ip, port, out_queue, in_queue, token, bypass_token):
   
     timeout = 3600
@@ -30,6 +33,8 @@ def start_callback_server(ip, port, out_queue, in_queue, token, bypass_token):
         "KEEP_ALIVE_TIMEOUT": timeout,
         "REQUEST_MAX_SIZE": max_size_bytes,
     }
+
+    dist["TOKEN"] = token
 
     app.ctx.TOKEN = token
     app.ctx.OUT_Q = out_queue
@@ -59,6 +64,8 @@ def start_callback_server(ip, port, out_queue, in_queue, token, bypass_token):
     #app.run(host=ip, port=port, debug=False, access_log=False)
     app.run(host=ip, port=port, debug=True, access_log=False)
 
+
+@app.route("/", methods=["GET", "POST"])
 async def root(request):
     data = request.json
     print("data is: ", data)
@@ -89,6 +96,7 @@ def _check_finished(info=None):
 
 def _check_rpc_token(token):
     print("token checking")
+    print("dist is: ", dist)
     print("app.config is: ", app.config)
     print("app.ctx is: ", app.ctx)
     if token != app.config.get("TOKEN"):
