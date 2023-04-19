@@ -469,31 +469,33 @@ class JobRunner(object):
             self.bypass_token,
         ]
 
-        app = Sanic.get_app(name="myApp")
+        # app = Sanic.get_app(name="myApp")
         # THIS DOES WORK
         timeout = 3600
         max_size_bytes = 100000000000
-        # conf = {
-        #     "TOKEN": self.token,
-        #     "OUT_Q": self.jr_queue,
-        #     "IN_Q": self.callback_queue,
-        #     "BYPASS_TOKEN": self.bypass_token,
-        #     "RESPONSE_TIMEOUT": timeout,
-        #     "REQUEST_TIMEOUT": timeout,
-        #     "KEEP_ALIVE_TIMEOUT": timeout,
-        #     "REQUEST_MAX_SIZE": max_size_bytes,
-        # }
-        app.shared_ctx.TOKEN = self.token
-        app.shared_ctx.OUT_Q = self.jr_queue
-        app.shared_ctx.IN_Q = self.callback_queue
-        app.shared_ctx.BYPASS_TOKEN = self.bypass_token
-        app.shared_ctx.RESPONSE_TIMEOUT = timeout
-        app.shared_ctx.REQUEST_TIMEOUT = timeout
-        app.shared_ctx.KEEP_ALIVE_TIMEOUT = timeout
-        app.shared_ctx.REQUEST_MAX_SIZE = max_size_bytes
+        conf = {
+            "IP": self.ip,
+            "PORT": self.port,
+            "TOKEN": self.token,
+            "OUT_Q": self.jr_queue,
+            "IN_Q": self.callback_queue,
+            "BYPASS_TOKEN": self.bypass_token,
+            "RESPONSE_TIMEOUT": timeout,
+            "REQUEST_TIMEOUT": timeout,
+            "KEEP_ALIVE_TIMEOUT": timeout,
+            "REQUEST_MAX_SIZE": max_size_bytes,
+        }
+        # app.shared_ctx.TOKEN = self.token
+        # app.shared_ctx.OUT_Q = self.jr_queue
+        # app.shared_ctx.IN_Q = self.callback_queue
+        # app.shared_ctx.BYPASS_TOKEN = self.bypass_token
+        # app.shared_ctx.RESPONSE_TIMEOUT = timeout
+        # app.shared_ctx.REQUEST_TIMEOUT = timeout
+        # app.shared_ctx.KEEP_ALIVE_TIMEOUT = timeout
+        # app.shared_ctx.REQUEST_MAX_SIZE = max_size_bytes
 
         # app.config.update_config(conf)
         # print("after update: ", app.config)
-        self.cbs = Process(target=start_callback_server, args=cb_args)
+        self.cbs = Process(target=start_callback_server, args=(conf,))
         self.cbs.start()
         self._watch(config)

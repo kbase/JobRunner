@@ -9,15 +9,28 @@ from sanic.exceptions import SanicException
 from sanic.log import logger
 from sanic.response import json
 
+from functools import partial
+from sanic.worker.loader import AppLoader
+
 
 Config.SANIC_REQUEST_TIMEOUT = 300
 
-app = Sanic(name="myApp")
+# app = Sanic(name="myApp")
 outputs = dict()
 prov = []
 
+def create_app(config):
+    app = Sanic(name="myApp")
+    app.config.update(config)
+    app.add_route(root, "/", methods=["GET", "POST"])
+    return app
 
-def start_callback_server(ip, port, out_queue, in_queue, token, bypass_token):
+
+def start_callback_server(config):
+    loader = AppLoader(factory=partial(create_app, config))
+    app = loader.load()
+    app.prepare(host=config.get("IP"), port=config.get("PORT"), dev=True)
+    Sanic.serve(primary=app, app_loader=loader)
   
     # timeout = 3600
     # max_size_bytes = 100000000000
@@ -60,10 +73,9 @@ def start_callback_server(ip, port, out_queue, in_queue, token, bypass_token):
     # app.add_route(root, '/', methods=["GET", "POST"])
 
     #app.run(host=ip, port=port, debug=False, access_log=False)
-    app.run(host=ip, port=port, debug=True, access_log=False)
+    # app.run(host=ip, port=port, debug=True, access_log=False)
 
 
-@app.route("/", methods=["GET", "POST"])
 async def root(request):
     data = request.json
     print("data is: ", data)
@@ -77,10 +89,11 @@ async def root(request):
 
 
 def _check_finished(info=None):
+    app = Sanic.get_app("myApp")
     global prov
     logger.debug(info)
-    # in_q = app.config["IN_Q"]
-    in_q = app.shared_ctx.IN_Q
+    in_q = app.config["IN_Q"]
+    # in_q = app.shared_ctx.IN_Q
     try:
         # Flush the queue
         while True:
@@ -94,17 +107,18 @@ def _check_finished(info=None):
 
 
 def _check_rpc_token(token):
+    app = Sanic.get_app("myApp")
     print("token checking")
     # print("app.shared_ctx.token is: ", app.shared_ctx.token)
-    # print("app.config in rpc token is: ", app.config)
+    print("app.config in rpc token is: ", app.config)
     # print("app.ctx is: ", app.ctx)
-    # if token != app.config.get("TOKEN"):
-    if token != app.shared_ctx.TOKEN:
+    if token != app.config.get("TOKEN"):
+    # if token != app.shared_ctx.TOKEN:
         print("token passed in is: ", token)
-        print("token in app.shared_ctx.TOKEN is: ", app.shared_ctx.TOKEN)
+        print("token in app.config is: ", app.config.get("TOKEN"))
         print("token is not right")
-        # if app.config.get("BYPASS_TOKEN"):
-        if app.shared_ctx.BYPASS_TOKEN:
+        if app.config.get("BYPASS_TOKEN"):
+        # if app.shared_ctx.BYPASS_TOKEN:
             print("Bypass token")
             pass
         else:
@@ -119,11 +133,12 @@ def _handle_provenance():
 
 
 def _handle_submit(module, method, data, token):
+    app = Sanic.get_app("myApp")
     _check_rpc_token(token)
     job_id = str(uuid.uuid1())
     data["method"] = "%s.%s" % (module, method[1:-7])
-    # app.config["OUT_Q"].put(["submit", job_id, data])
-    app.shared_ctx.OUT_Q.put(["submit", job_id, data])
+    app.config["OUT_Q"].put(["submit", job_id, data])
+    # app.shared_ctx.OUT_Q.put(["submit", job_id, data])
     return {"result": [job_id]}
 
 
@@ -164,11 +179,12 @@ async def _process_rpc(data, token):
         return _handle_provenance()
     else:
         # Sync Job
+        app = Sanic.get_app("myApp")
         _check_rpc_token(token)
         job_id = str(uuid.uuid1())
         data["method"] = "%s.%s" % (module, method)
-        # app.config["OUT_Q"].put(["submit", job_id, data])
-        app.shared_ctx.OUT_Q.put(["submit", job_id, data])
+        app.config["OUT_Q"].put(["submit", job_id, data])
+        # app.shared_ctx.OUT_Q.put(["submit", job_id, data])
         try:
             while True:
                 _check_finished(f'synk check for {data["method"]} for {job_id}')
