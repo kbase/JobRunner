@@ -2,7 +2,6 @@ import logging
 import os
 import signal
 import socket
-import sys
 from multiprocessing import Process, Queue
 from queue import Empty
 from socket import gethostname
@@ -22,7 +21,6 @@ from .logger import Logger
 from .provenance import Provenance
 from .mock_ee2 import Mock_EE2
 
-from sanic import Sanic
 
 logging.basicConfig(format="%(created)s %(levelname)s: %(message)s",
                     level=logging.INFO)
@@ -61,8 +59,10 @@ class JobRunner(object):
         self.prov = None
         self._init_callback_url(port=port)
         self.debug = debug
+        self.method_debug = False
         self.mr = MethodRunner(
-            self.config, job_id, logger=self.logger, debug=self.debug
+            self.config, job_id, logger=self.logger,
+            debug=self.method_debug
         )
         self.sr = SpecialRunner(self.config, job_id, logger=self.logger)
         self.cc = CatalogCache(config)
@@ -91,7 +91,8 @@ class JobRunner(object):
             status = self.ee2.check_job_canceled({"job_id": self.job_id})
         except Exception as e:
             self.logger.error(
-                f"Warning: Job cancel check failed due to {e}. However, the job will continue to run."
+                f"Warning: Job cancel check failed due to {e}."
+                " However, the job will continue to run."
             )
             return True
         if status.get("finished", False):
@@ -147,7 +148,8 @@ class JobRunner(object):
         if service_ver is None:
             service_ver = job_params.get("context", {}).get("service_ver")
 
-        # TODO Fail gracefully if this step fails. For example, setting service_ver='fake'
+        # TODO Fail gracefully if this step fails.
+        # For example, setting service_ver='fake'
         module_info = self.cc.get_module_info(module, service_ver)
 
         git_url = module_info["git_url"]
@@ -208,7 +210,8 @@ class JobRunner(object):
                             config=config, job_id=req[1], job_params=req[2]
                         )
                     else:
-                        self._submit(config=config, job_id=req[1], job_params=req[2])
+                        self._submit(config=config, job_id=req[1],
+                                     job_params=req[2])
                     ct += 1
                 elif req[0] == "finished_special":
                     job_id = req[1]
@@ -261,7 +264,7 @@ class JobRunner(object):
         else:
             self.port = sock.getsockname()[1]
         sock.close()
-        url = "http://{}:{}/".format(self.ip, self.port)
+        url = f"http://{self.ip}:{self.port}/"
         self.logger.log("Job runner recieved Callback URL {}".format(url))
         self.callback_url = url
 
@@ -313,7 +316,9 @@ class JobRunner(object):
         will not return until the job finishes or encounters and error.
         This method also handles starting up the callback server.
         """
-        running_msg = f"Running job {self.job_id} ({os.environ.get('CONDOR_ID')}) on {self.hostname} ({self.ip}) in {self.workdir}"
+        condor_id = os.environ.get('CONDOR_ID')
+        running_msg = f"Running job {self.job_id} ({condor_id}) on " + \
+                      f"{self.hostname} ({self.ip}) in {self.workdir}"
 
         self.logger.log(running_msg)
         logging.info(running_msg)
@@ -369,21 +374,26 @@ class JobRunner(object):
         config["workdir"] = self.workdir
         config["user"] = self._validate_token()
         config["cgroup"] = self._get_cgroup()
+        config["cgroup"] = None
+        logging.info(f"Cgroup: {config['cgroup']}")
 
         logging.info("Setting provenance")
         self.prov = Provenance(job_params)
 
         # Start the callback server
         logging.info("Starting callback server")
-        cb_args = [
-            self.ip,
-            self.port,
-            self.jr_queue,
-            self.callback_queue,
-            self.token,
-            self.bypass_token,
-        ]
-        self.cbs = Process(target=start_callback_server, args=cb_args)
+        cb_args = {
+            "IP": self.ip,
+            "PORT": self.port,
+            "OUT_Q": self.jr_queue,
+            "IN_Q": self.callback_queue,
+            "TOKEN": self.token,
+            "BYPASS_TOKEN": self.bypass_token,
+        }
+        kwargs = {"host": self.ip, "port": self.port, "dev": self.debug}
+        self.cbs = Process(target=start_callback_server,
+                           args=(cb_args,),
+                           kwargs=kwargs)
         self.cbs.start()
 
         # Submit the main job
@@ -422,7 +432,9 @@ class JobRunner(object):
         """
         This method just does the minimal steps to run the call back server.
         """
-        running_msg = f"Running job {self.job_id} ({os.environ.get('CONDOR_ID')}) on {self.hostname} ({self.ip}) in {self.workdir}"
+        condor_id = os.environ.get('CONDOR_ID')
+        running_msg = f"Running job {self.job_id} ({condor_id}) on " + \
+                      f"{self.hostname} ({self.ip}) in {self.workdir}"
 
         self.logger.log(running_msg)
 
@@ -460,14 +472,6 @@ class JobRunner(object):
 
         # Start the callback server
         logging.info("Starting callback server")
-        cb_args = [
-            self.ip,
-            self.port,
-            self.jr_queue,
-            self.callback_queue,
-            self.token,
-            self.bypass_token,
-        ]
 
         # app = Sanic.get_app(name="myApp")
         # THIS DOES WORK
@@ -485,17 +489,10 @@ class JobRunner(object):
             "KEEP_ALIVE_TIMEOUT": timeout,
             "REQUEST_MAX_SIZE": max_size_bytes,
         }
-        # app.shared_ctx.TOKEN = self.token
-        # app.shared_ctx.OUT_Q = self.jr_queue
-        # app.shared_ctx.IN_Q = self.callback_queue
-        # app.shared_ctx.BYPASS_TOKEN = self.bypass_token
-        # app.shared_ctx.RESPONSE_TIMEOUT = timeout
-        # app.shared_ctx.REQUEST_TIMEOUT = timeout
-        # app.shared_ctx.KEEP_ALIVE_TIMEOUT = timeout
-        # app.shared_ctx.REQUEST_MAX_SIZE = max_size_bytes
 
-        # app.config.update_config(conf)
-        # print("after update: ", app.config)
-        self.cbs = Process(target=start_callback_server, args=(conf,))
+        kwargs = {"host": self.ip, "port": self.port, "dev": self.debug}
+        self.cbs = Process(target=start_callback_server,
+                           args=(conf,),
+                           kwargs=kwargs)
         self.cbs.start()
         self._watch(config)

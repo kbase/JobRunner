@@ -15,71 +15,26 @@ from sanic.worker.loader import AppLoader
 
 Config.SANIC_REQUEST_TIMEOUT = 300
 
-# app = Sanic(name="myApp")
 outputs = dict()
 prov = []
 
 def create_app(config):
     app = Sanic(name="myApp")
+    app.config.MOTD = False
     app.config.update(config)
     app.add_route(root, "/", methods=["GET", "POST"])
     return app
 
 
-def start_callback_server(config):
+def start_callback_server(config, host=None, port=None, dev=False):
     loader = AppLoader(factory=partial(create_app, config))
     app = loader.load()
-    app.prepare(dev=True)
+    app.prepare(host=host, port=port, dev=dev, motd=False, access_log=dev)
     Sanic.serve(primary=app, app_loader=loader)
-  
-    # timeout = 3600
-    # max_size_bytes = 100000000000
-    # conf = {
-    #     "TOKEN": token,
-    #     "OUT_Q": out_queue,
-    #     "IN_Q": in_queue,
-    #     "BYPASS_TOKEN": bypass_token,
-    #     "RESPONSE_TIMEOUT": timeout,
-    #     "REQUEST_TIMEOUT": timeout,
-    #     "KEEP_ALIVE_TIMEOUT": timeout,
-    #     "REQUEST_MAX_SIZE": max_size_bytes,
-    # }
-
-    # dist["TOKEN"] = token
-
-    # app.ctx.TOKEN = token
-    # app.ctx.OUT_Q = out_queue
-    # app.ctx.IN_Q = in_queue
-    # app.ctx.BYPASS_TOKEN = bypass_token
-    # app.ctx.RESPONSE_TIMEOUT = timeout
-    # app.ctx.REQUEST_TIMEOUT = timeout
-    # app.ctx.KEEP_ALIVE_TIMEOUT = timeout
-    # app.ctx.REQUEST_MAX_SIZE = max_size_bytes
-
-    # print("before update: ", conf)
-    # print("In scs app.ctx: ", app.ctx)
-
-    # app.config["TOKEN"] = token
-    # app.config["OUT_Q"] = out_queue
-    # app.config["IN_Q"] = in_queue
-    # app.config["BYPASS_TOKEN"] = bypass_token
-    # app.config["RESPONSE_TIMEOUT"] = timeout
-    # app.config["REQUEST_TIMEOUT"] = timeout
-    # app.config["KEEP_ALIVE_TIMEOUT"] = timeout
-    # app.config["REQUEST_MAX_SIZE"] = max_size_bytes
-
-    # print("app.config is: ", app.config)
-    # print("adding route now ...")
-    # app.add_route(root, '/', methods=["GET", "POST"])
-
-    #app.run(host=ip, port=port, debug=False, access_log=False)
-    # app.run(host=ip, port=port, debug=True, access_log=False)
 
 
 async def root(request):
     data = request.json
-    print("data is: ", data)
-    print("request header is: ", request.headers)
     if request.method == "POST" and data is not None and "method" in data:
         token = request.headers.get("Authorization")
         response = await _process_rpc(data, token)
@@ -92,8 +47,7 @@ def _check_finished(info=None):
     app = Sanic.get_app("myApp")
     global prov
     logger.debug(info)
-    in_q = app.config["IN_Q"]
-    # in_q = app.shared_ctx.IN_Q
+    in_q = app.config.IN_Q
     try:
         # Flush the queue
         while True:
@@ -108,22 +62,13 @@ def _check_finished(info=None):
 
 def _check_rpc_token(token):
     app = Sanic.get_app("myApp")
-    print("token checking")
-    # print("app.shared_ctx.token is: ", app.shared_ctx.token)
-    print("app.config in rpc token is: ", app.config)
-    # print("app.ctx is: ", app.ctx)
     if token != app.config.get("TOKEN"):
-    # if token != app.shared_ctx.TOKEN:
-        print("token passed in is: ", token)
-        print("token in app.config is: ", app.config.get("TOKEN"))
-        print("token is not right")
         if app.config.get("BYPASS_TOKEN"):
-        # if app.shared_ctx.BYPASS_TOKEN:
-            print("Bypass token")
+            logger.warning("Bypassing Token Check")
             pass
         else:
             # abort(401)
-            print("raise Exception")
+            logging.error("raise Exception")
             raise SanicException(status_code=401)
 
 
@@ -137,8 +82,7 @@ def _handle_submit(module, method, data, token):
     _check_rpc_token(token)
     job_id = str(uuid.uuid1())
     data["method"] = "%s.%s" % (module, method[1:-7])
-    app.config["OUT_Q"].put(["submit", job_id, data])
-    # app.shared_ctx.OUT_Q.put(["submit", job_id, data])
+    app.config.OUT_Q.put(["submit", job_id, data])
     return {"result": [job_id]}
 
 
@@ -183,8 +127,7 @@ async def _process_rpc(data, token):
         _check_rpc_token(token)
         job_id = str(uuid.uuid1())
         data["method"] = "%s.%s" % (module, method)
-        app.config["OUT_Q"].put(["submit", job_id, data])
-        # app.shared_ctx.OUT_Q.put(["submit", job_id, data])
+        app.config.OUT_Q.put(["submit", job_id, data])
         try:
             while True:
                 _check_finished(f'synk check for {data["method"]} for {job_id}')

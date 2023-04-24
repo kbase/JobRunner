@@ -21,7 +21,7 @@ class DockerRunner:
         At exit, attempt to clean up all docker containers.
         Suppress errors in case they don't exist
         """
-        if self.debug is True:
+        if self.debug:
             return
 
         for container in self.containers:
@@ -109,7 +109,7 @@ class DockerRunner:
                 pass
 
             try:
-                if self.debug is True:
+                if self.debug:
                     msg = (
                         f"Not going to delete container {c.id} because debug mode is on"
                     )
@@ -139,6 +139,7 @@ class DockerRunner:
             # See if the image exists
             image_id = self.docker.images.get(name=image).id
             self.pulled[image] = image_id
+            logging.info(image_id)
         except docker.errors.ImageNotFound as e:
             self.logger.error(f"{e}")
 
@@ -191,6 +192,7 @@ class DockerRunner:
                 f"Docker daemon did not pull and run {image} within {self.timeout} sec")
             raise
 
+        logging.info(c.status)
         self.containers.append(c)
         # Start a thread to monitor output and handle finished containers
         t = Thread(target=self._shepherd, args=[c, job_id, queues])
@@ -209,7 +211,7 @@ class DockerRunner:
             c.kill()
         except Exception:
             pass
-
+        return
         try:
             c.remove()
         except Exception:

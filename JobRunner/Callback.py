@@ -4,6 +4,7 @@ from JobRunner.JobRunner import JobRunner
 import socket
 from contextlib import closing
 import requests
+import logging
 
 _TOKEN_ENV = "KB_AUTH_TOKEN"
 _ADMIN_TOKEN_ENV = "KB_ADMIN_AUTH_TOKEN"
@@ -18,6 +19,7 @@ class Config():
         self.base = os.environ.get(_BASE_URL, _DEFAULT_BASE_URL).rstrip("/")
         self.catalog_url = f"{self.base}/catalog"
         self.workdir = os.environ.get("JOB_DIR", '/tmp/')
+        logging.info(f"job_dir: {self.workdir}")
         if not os.path.exists(self.workdir):
             os.makedirs(self.workdir)
         auth_ext = 'auth/api/legacy/KBase/Sessions/Login'
@@ -41,6 +43,7 @@ class Config():
 class Callback():
     def __init__(self):
         self.conf = Config()
+        print("Config")
         self.ip = os.environ.get('CALLBACK_IP', get_ip())
         self.port = None
         self.cbs = None

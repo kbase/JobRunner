@@ -32,7 +32,8 @@ class MockDocker(object):
         self.err_reload = reload
         self.err_log = log
 
-    def logs(self, stdout=True, stderr=False, since=None, until=None, timestamps=False):
+    def logs(self, stdout=True, stderr=False, since=None, until=None,
+             timestamps=False):
         if self.err_log:
             raise ValueError()
         return []
@@ -48,17 +49,18 @@ class DockerRunnerTest(unittest.TestCase):
         pass
 
     def test_run(self):
+        workdir = os.environ.get("JOB_DIR", '/tmp/')
         mlog = MockLogger()
         dr = DockerRunner(logger=mlog)
         inp = {"method": "mock_app.bogus"}
-        with open("/tmp/input.json", "w") as f:
+        with open(f"{workdir}/input.json", "w") as f:
             f.write(json.dumps(inp))
-        vols = {"/tmp": {"bind": "/kb/module/work", "mode": "rw"}}
-        of = "/tmp/output.json"
+        vols = {workdir: {"bind": "/kb/module/work", "mode": "rw"}}
+        of = f"{workdir}/output.json"
         if os.path.exists(of):
             os.remove(of)
         c = dr.run("1234", "mock_app:latest", {}, vols, {}, [])
-        _sleep(2)
+        _sleep(5)
         self.assertTrue(os.path.exists(of))
 
         self.assertGreaterEqual(len(mlog.all), 2)
@@ -72,7 +74,8 @@ class DockerRunnerTest(unittest.TestCase):
         sout += u"2019-07-08T23:21:32.508896500Z 4\n"
         serr = u"2019-07-08T23:21:32.508797700Z 3\n"
         serr += u"2019-07-08T23:21:32.508797600Z 2\n"
-        lines = dr._sort_lines_by_time(sout.encode("utf-8"), serr.encode("utf-8"))
+        lines = dr._sort_lines_by_time(sout.encode("utf-8"),
+                                       serr.encode("utf-8"))
         self.assertEquals(lines[0]["line"], "1")
         self.assertEquals(lines[1]["line"], "2")
         self.assertEquals(lines[2]["line"], "3")
@@ -83,7 +86,8 @@ class DockerRunnerTest(unittest.TestCase):
         dr = DockerRunner()
         sout = u"2019-07-08T23:21:32.508696500Z \n"
         serr = u"2019-07-08T23:21:32.508797700Z \n"
-        lines = dr._sort_lines_by_time(sout.encode("utf-8"), serr.encode("utf-8"))
+        lines = dr._sort_lines_by_time(sout.encode("utf-8"),
+                                       serr.encode("utf-8"))
         self.assertEquals(lines[0]["line"], "")
         self.assertEquals(lines[1]["line"], "")
         self.assertEquals(lines[1]["is_error"], 1)

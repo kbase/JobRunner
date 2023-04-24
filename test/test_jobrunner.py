@@ -3,6 +3,7 @@ import os
 import unittest
 from copy import deepcopy
 from time import time as _time
+from time import sleep
 from unittest.mock import patch, MagicMock
 
 from nose.plugins.attrib import attr
@@ -17,7 +18,6 @@ from .mock_data import (
     AUTH_V2_TOKEN,
 )
 from docker.errors import NotFound
-from docker.models.containers import Container
 from JobRunner.exceptions import CantRestartJob
 
 
@@ -58,39 +58,38 @@ class JobRunnerTest(unittest.TestCase):
             base = "http://%s/services/" % (os.environ["TEST_URL"])
         cls.ee2_url = base + "ee2"
         cls.jobid = "1234"
-        cls.workdir = "/tmp/jr/"
+        cls.workdir = os.environ.get("JOB_DIR", "/tmp")
         cls.cfg["token"] = cls.token
         cls.future = _time() + 3600
         cls.config = {
             "catalog-service-url": base + "catalog",
             "auth-service-url": base + "auth/api/legacy/KBase/Sessions/Login",
             "auth2-url": base + "auth/api/V2/token",
-            "workdir": "/tmp/jr",
+            "workdir": cls.workdir,
         }
-        if not os.path.exists("/tmp/jr"):
-            os.mkdir("/tmp/jr")
+        if not os.path.exists(cls.workdir):
+            os.mkdir(cls.workdir)
         if "KB_ADMIN_AUTH_TOKEN" not in os.environ:
             os.environ["KB_ADMIN_AUTH_TOKEN"] = "bogus"
 
-
-
     def _cleanup(self, job):
         d = os.path.join(self.workdir, "workdir")
+        flist = ["config.properties", "input.json", "output.json", "token"]
         if os.path.exists(d):
-            for fn in ["config.properties", "input.json", "output.json", "token"]:
+            for fn in flist:
                 if os.path.exists(os.path.join(d, fn)):
                     os.unlink(os.path.join(d, fn))
             try:
                 os.rmdir(d)
-            except:
-                pass
+            except OSError:
+                print(f"Failed to remove {d}")
 
     @attr("offline")
     @patch("JobRunner.JobRunner.KBaseAuth", autospec=True)
     @patch("JobRunner.JobRunner.EE2", autospec=True)
     def test_run_sub(self, mock_ee2, mock_auth):
         """
-        This test is expected to run for 50-60 seconds?
+        deep callback test: This test is expected to run for 50-60 seconds
 
         """
         self._cleanup(self.jobid)
@@ -101,7 +100,8 @@ class JobRunnerTest(unittest.TestCase):
         config["auth-service-url"] = self.config["auth-service-url"]
         config["auth.service.url.v2"] = self.config["auth2-url"]
         jr = JobRunner(
-            self.config, self.ee2_url, self.jobid, self.token, self.admin_token
+            self.config, self.ee2_url, self.jobid, self.token,
+            self.admin_token, debug=True
         )
         rv = deepcopy(CATALOG_GET_MODULE_VERSION)
         rv["docker_img_name"] = "test/runtester:latest"
@@ -131,7 +131,8 @@ class JobRunnerTest(unittest.TestCase):
         config["auth-service-url"] = self.config["auth-service-url"]
         config["auth.service.url.v2"] = self.config["auth2-url"]
         jr = JobRunner(
-            self.config, self.ee2_url, self.jobid, self.token, self.admin_token
+            self.config, self.ee2_url, self.jobid, self.token,
+            self.admin_token, debug=True
         )
         rv = deepcopy(CATALOG_GET_MODULE_VERSION)
         rv["docker_img_name"] = "mock_app:latest"
@@ -158,7 +159,8 @@ class JobRunnerTest(unittest.TestCase):
         params["method"] = "mock_app.voltest"
         params["params"] = {"param1": "value1"}
         jr = JobRunner(
-            self.config, self.ee2_url, self.jobid, self.token, self.admin_token
+            self.config, self.ee2_url, self.jobid, self.token,
+            self.admin_token, debug=True
         )
         rv = deepcopy(CATALOG_GET_MODULE_VERSION)
         rv["docker_img_name"] = "mock_app:latest"
@@ -187,7 +189,8 @@ class JobRunnerTest(unittest.TestCase):
     @patch("JobRunner.JobRunner.EE2", autospec=True)
     def test_cancel(self, mock_ee2, mock_auth):
         """
-        This test is expected to run for 30 seconds?
+
+        Cancel Test: expected to run for 30 seconds?
 
         """
         self._cleanup(self.jobid)
@@ -195,11 +198,12 @@ class JobRunnerTest(unittest.TestCase):
         params["method"] = "RunTester.run_RunTester"
         params["params"] = [{"depth": 3, "size": 1000, "parallel": 4}]
         jr = JobRunner(
-            self.config, self.ee2_url, self.jobid, self.token, self.admin_token
+            self.config, self.ee2_url, self.jobid, self.token,
+            self.admin_token, debug=True
         )
         rv = deepcopy(CATALOG_GET_MODULE_VERSION)
         rv["docker_img_name"] = "test/runtester:latest"
-        jr._get_cgroup = MagicMock(return_value='cgroup')
+        jr._get_cgroup = MagicMock(return_value=None)
         jr.cc.catalog.get_module_version = MagicMock(return_value=rv)
         jr.cc.catalog.list_volume_mounts = MagicMock(return_value=[])
         jr.cc.catalog.get_secure_config_params = MagicMock(return_value=None)
@@ -208,7 +212,8 @@ class JobRunnerTest(unittest.TestCase):
         jr.ee2.get_job_params.return_value = params
         jr.ee2.list_config.return_value = EE2_LIST_CONFIG
         nf = {"finished": False}
-        jr.ee2.check_job_canceled.side_effect = [nf, nf, nf, nf, nf, {"finished": True}]
+        seq = [nf, nf, nf, nf, nf, {"finished": True}]
+        jr.ee2.check_job_canceled.side_effect = seq
         jr.auth.get_user.return_value = "bogus"
 
         out = jr.run()
@@ -216,10 +221,19 @@ class JobRunnerTest(unittest.TestCase):
         self.assertEqual({"error": "Canceled or unexpected error"}, out)
 
         # Check that all containers are gone
-        for c in jr.mr.containers: # type: Container
+        retries = 60
+        for c in jr.mr.containers:  # type: Container
+            try:
+                while retries > 0:
+                    c.reload()
+                    sleep(0.5)
+                    retries -= 1
+            except NotFound:
+                continue
+
+        for c in jr.mr.containers:  # type: Container
             with self.assertRaises(expected_exception=NotFound):
                 c.reload()
-
 
     @attr("offline")
     @patch("JobRunner.JobRunner.KBaseAuth", autospec=True)
@@ -231,7 +245,9 @@ class JobRunnerTest(unittest.TestCase):
         params["params"] = [{"depth": 2, "size": 1000, "parallel": 5}]
         config = deepcopy(self.config)
         config["max_tasks"] = 2
-        jr = JobRunner(config, self.ee2_url, self.jobid, self.token, self.admin_token)
+        jr = JobRunner(config, self.ee2_url, self.jobid, self.token,
+                       self.admin_token, debug=True,
+                       )
         rv = deepcopy(CATALOG_GET_MODULE_VERSION)
         rv["docker_img_name"] = "test/runtester:latest"
         jr.cc.catalog.get_module_version = MagicMock(return_value=rv)
@@ -254,7 +270,8 @@ class JobRunnerTest(unittest.TestCase):
         self._cleanup(self.jobid)
         params = deepcopy(EE2_JOB_PARAMS)
         jr = JobRunner(
-            self.config, self.ee2_url, self.jobid, self.token, self.admin_token
+            self.config, self.ee2_url, self.jobid, self.token,
+            self.admin_token, debug=True
         )
         rv = deepcopy(CATALOG_GET_MODULE_VERSION)
         rv["docker_img_name"] = "mock_app:latest"
@@ -274,7 +291,8 @@ class JobRunnerTest(unittest.TestCase):
         params = deepcopy(EE2_JOB_PARAMS)
         os.environ["KB_AUTH_TOKEN"] = "bogus"
         jr = JobRunner(
-            self.config, self.ee2_url, self.jobid, self.token, self.admin_token
+            self.config, self.ee2_url, self.jobid, self.token,
+            self.admin_token, debug=True
         )
         jr.ee2.check_job_canceled.return_value = {"finished": False}
         jr.ee2.get_job_params.return_value = params
@@ -287,11 +305,11 @@ class JobRunnerTest(unittest.TestCase):
     def test_canceled_job(self, mock_ee2, mock_auth):
 
         self._cleanup(self.jobid)
-        params = deepcopy(EE2_JOB_PARAMS)
         mlog = MockLogger()
         os.environ["KB_AUTH_TOKEN"] = "bogus"
         jr = JobRunner(
-            self.config, self.ee2_url, self.jobid, self.token, self.admin_token
+            self.config, self.ee2_url, self.jobid, self.token,
+            self.admin_token, debug=True
         )
         jr.logger = mlog
         jr.ee2.check_job_canceled.return_value = {"finished": True}
@@ -307,7 +325,8 @@ class JobRunnerTest(unittest.TestCase):
         mlog = MockLogger()
         os.environ["KB_AUTH_TOKEN"] = "bogus"
         jr = JobRunner(
-            self.config, self.ee2_url, self.jobid, self.token, self.admin_token
+            self.config, self.ee2_url, self.jobid, self.token,
+            self.admin_token, debug=True
         )
         jr.logger = mlog
         jr.ee2.check_job_canceled.return_value = {"finished": False}
@@ -329,7 +348,8 @@ class JobRunnerTest(unittest.TestCase):
         resp = AUTH_V2_TOKEN
         mock_req.get.return_value = MockAuth(resp)
         jr = JobRunner(
-            self.config, self.ee2_url, self.jobid, self.token, self.admin_token
+            self.config, self.ee2_url, self.jobid, self.token,
+            self.admin_token, debug=True
         )
         mlog = MockLogger()
         jr.logger = mlog
@@ -351,7 +371,8 @@ class JobRunnerTest(unittest.TestCase):
         params["method"] = "mock_app.bogus"
         params["params"] = {"param1": "value1"}
         jr = JobRunner(
-            self.config, self.ee2_url, self.jobid, self.token, self.admin_token
+            self.config, self.ee2_url, self.jobid, self.token,
+            self.admin_token, debug=True
         )
         rv = deepcopy(CATALOG_GET_MODULE_VERSION)
         rv["docker_img_name"] = "mock_app:latest"
@@ -373,7 +394,8 @@ class JobRunnerTest(unittest.TestCase):
     @patch("JobRunner.JobRunner.EE2", autospec=True)
     def test_special(self, mock_ee2, mock_auth):
         jr = JobRunner(
-            self.config, self.ee2_url, self.jobid, self.token, self.admin_token
+            self.config, self.ee2_url, self.jobid, self.token,
+            self.admin_token, debug=True
         )
         jr._get_cgroup = MagicMock(return_value=None)
         params = deepcopy(EE2_JOB_PARAMS)
@@ -398,7 +420,8 @@ class JobRunnerTest(unittest.TestCase):
         config["auth-service-url"] = self.config["auth-service-url"]
         config["auth.service.url.v2"] = self.config["auth2-url"]
         jr = JobRunner(
-            self.config, self.ee2_url, self.jobid, self.token, self.admin_token
+            self.config, self.ee2_url, self.jobid, self.token,
+            self.admin_token, debug=True
         )
         rv = deepcopy(CATALOG_GET_MODULE_VERSION)
         rv["docker_img_name"] = "test/runtester:latest"
@@ -427,7 +450,8 @@ class JobRunnerTest(unittest.TestCase):
         config["auth-service-url"] = self.config["auth-service-url"]
         config["auth.service.url.v2"] = self.config["auth2-url"]
         jr = JobRunner(
-            self.config, self.ee2_url, self.jobid, self.token, self.admin_token
+            self.config, self.ee2_url, self.jobid, self.token,
+            self.admin_token, debug=True
         )
         mlog = MockLogger()
         jr.logger = mlog
