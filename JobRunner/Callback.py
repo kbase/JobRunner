@@ -112,7 +112,8 @@ def find_free_port():
 
 
 def main():
-    print("Todo")
+    cb = Callback()
+    cb.start()
 
 
 if __name__ == '__main__':
