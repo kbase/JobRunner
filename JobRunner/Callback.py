@@ -42,7 +42,7 @@ class Callback():
     def __init__(self):
         self.conf = Config()
         self.ip = os.environ.get('CALLBACK_IP', get_ip())
-        self.port = None
+        self.port = os.environ.get('CALLBACK_PORT')
         self.cbs = None
         self.callback_url = None
 
@@ -63,7 +63,8 @@ class Callback():
             raise e
 
     def start(self):
-        self.port = find_free_port()
+        if not self.port:
+            self.port = find_free_port()
         self.callback_url = f"http://{self.ip}:{self.port}"
         os.environ["SDK_CALLBACK_URL"] = self.callback_url
         self.cbs = Process(target=self.run, daemon=False)
