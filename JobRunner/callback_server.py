@@ -2,18 +2,43 @@ import asyncio
 import uuid
 import os
 from queue import Empty
+import logging
+from typing import Annotated, Union
+from fastapi import FastAPI, Header
+from pydantic import BaseModel
+import uvicorn
 
-from sanic import Sanic
-from sanic.config import Config
-from sanic.exceptions import abort
-from sanic.log import logger
-from sanic.response import json
 
-Config.SANIC_REQUEST_TIMEOUT = 300
+app = FastAPI()
 
-app = Sanic()
+
+#from sanic import Sanic
+#from sanic.exceptions import abort
+#from sanic.log import logger
+#from sanic.response import json
+
+
+#Config.SANIC_REQUEST_TIMEOUT = 300
+
 outputs = dict()
 prov = []
+token = None
+bypass_token = False
+in_q = None
+out_q = None
+
+
+def abort():
+    print("TODO")
+
+
+def config(conf):
+    global token
+    global out_q
+    global in_q
+    token = conf["token"]
+    out_q = conf["out_q"]
+    in_q = conf["in_q"]
 
 
 def start_callback_server(ip, port, out_queue, in_queue, token, bypass_token):
@@ -29,27 +54,37 @@ def start_callback_server(ip, port, out_queue, in_queue, token, bypass_token):
         "KEEP_ALIVE_TIMEOUT": timeout,
         "REQUEST_MAX_SIZE": max_size_bytes,
     }
-    app.config.update(conf)
+    #app.config.update(conf)
+    config(conf)
     if os.environ.get("IN_CONTAINER"):
         ip = "0.0.0.0"
-    app.run(host=ip, port=port, debug=False, access_log=False)
+    #app.run(host=ip, port=port, debug=False, access_log=False)
+    uvconfig = uvicorn.Config("JobRunner.callback_server:app", host=ip, port=port, log_level="info")
+    server = uvicorn.Server(uvconfig)
+    server.run()
 
 
-@app.route("/", methods=["GET", "POST"])
-async def root(request):
-    data = request.json
-    if request.method == "POST" and data is not None and "method" in data:
-        token = request.headers.get("Authorization")
+
+class RPC(BaseModel):
+    method: str
+
+
+@app.post("/")
+async def root(data: dict, Authorization: Annotated[Union[str, None], Header()] = None):
+#    data = request.json
+    if data is not None and "method" in data:
+        token = Authorization
         response = await _process_rpc(data, token)
         status = 500 if "error" in response else 200
-        return json(response, status=status)
-    return json([{}])
+        # return json(response, status=status)
+        return response
+    return {}
 
 
 def _check_finished(info=None):
     global prov
-    logger.debug(info)
-    in_q = app.config["in_q"]
+    global in_q
+    logging.debug(info)
     try:
         # Flush the queue
         while True:
@@ -62,9 +97,10 @@ def _check_finished(info=None):
         pass
 
 
-def _check_rpc_token(token):
-    if token != app.config.get("token"):
-        if app.config.get("bypass_token"):
+def _check_rpc_token(req_token):
+    global token
+    if req_token != token:
+        if bypass_token:
             pass
         else:
             abort(401)
@@ -76,10 +112,11 @@ def _handle_provenance():
 
 
 def _handle_submit(module, method, data, token):
+    global out_q
     _check_rpc_token(token)
     job_id = str(uuid.uuid1())
     data["method"] = "%s.%s" % (module, method[1:-7])
-    app.config["out_q"].put(["submit", job_id, data])
+    out_q.put(["submit", job_id, data])
     return {"result": [job_id]}
 
 
@@ -97,7 +134,7 @@ def _handle_checkjob(data):
             if "error" in resp:
                 return {"result": [resp], "error": resp["error"]}
         except Exception as e:
-            logger.debug(e)
+            logging.debug(e)
 
     return {"result": [resp]}
 
@@ -122,7 +159,7 @@ async def _process_rpc(data, token):
         _check_rpc_token(token)
         job_id = str(uuid.uuid1())
         data["method"] = "%s.%s" % (module, method)
-        app.config["out_q"].put(["submit", job_id, data])
+        out_q.put(["submit", job_id, data])
         try:
             while True:
                 _check_finished(f'synk check for {data["method"]} for {job_id}')
@@ -134,7 +171,7 @@ async def _process_rpc(data, token):
         except Exception as e:
             # Attempt to log error, but this is not very effective..
             exception_message = f"Timeout or exception: {e} {type(e)}"
-            logger.error(exception_message)
+            logging.error(exception_message)
             error_obj = {
                 "error": exception_message,
                 "code": "123",

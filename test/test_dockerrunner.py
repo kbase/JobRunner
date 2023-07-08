@@ -51,10 +51,11 @@ class DockerRunnerTest(unittest.TestCase):
         mlog = MockLogger()
         dr = DockerRunner(logger=mlog)
         inp = {"method": "mock_app.bogus"}
-        with open("/tmp/input.json", "w") as f:
+        workdir = os.environ.get("JOB_DIR", "/tmp")
+        with open(f"{workdir}/input.json", "w") as f:
             f.write(json.dumps(inp))
-        vols = {"/tmp": {"bind": "/kb/module/work", "mode": "rw"}}
-        of = "/tmp/output.json"
+        vols = {workdir: {"bind": "/kb/module/work", "mode": "rw"}}
+        of = f"{workdir}/output.json"
         if os.path.exists(of):
             os.remove(of)
         c = dr.run("1234", "mock_app:latest", {}, vols, {}, [])
