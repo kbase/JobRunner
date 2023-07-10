@@ -31,7 +31,7 @@ class JobRunner(object):
     to support subjobs and provenenace calls.
     """
 
-    def __init__(self, config: Config, port: None):
+    def __init__(self, config: Config, port=None):
         """
         inputs: config dictionary, EE2 URL, Job id, Token, Admin Token
         """

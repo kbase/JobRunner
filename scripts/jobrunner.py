@@ -92,9 +92,8 @@ def main():
     else:
         jr_logger.error("Incorrect usage")
         sys.exit(1)
-    base_url = ee2_url.rstrip("ee2")
-
-    # sentry_sdk.init(dsn=os.environ.get("SENTRY_URL"), integrations=[SanicIntegration()])
+    ee2_suffix = ee2_url.split("/")[-1]
+    base_url = ee2_url.rstrip(ee2_suffix)
 
     config = Config(workdir=os.getcwd(), job_id=job_id, base_url=base_url)
     if not os.path.exists(config.workdir):
