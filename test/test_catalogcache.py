@@ -3,7 +3,7 @@ import os
 import unittest
 from unittest.mock import patch, MagicMock
 
-
+from JobRunner.config import Config
 from JobRunner.CatalogCache import CatalogCache
 
 from copy import deepcopy
@@ -18,14 +18,8 @@ class CatalogCacheTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.token = os.environ.get("KB_AUTH_TOKEN", None)
-        cls.admin_token = os.environ.get("KB_ADMIN_AUTH_TOKEN", None)
-        cls.cfg = {}
-        base = "https://ci.kbase.us/services/"
-        cls.cfg = {
-            "catalog-service-url": base + "catalog",
-            "token": cls.token,
-            "admin_token": cls.admin_token,
-        }
+        cls.admin_token = os.environ.get("KB_ADMIN_AUTH_TOKEN", "bogus")
+        cls.cfg = Config()
 
     @patch("JobRunner.CatalogCache.Catalog", autospec=True)
     def test_cache(self, mock_cc):

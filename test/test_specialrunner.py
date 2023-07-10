@@ -3,6 +3,7 @@ import os
 import unittest
 
 from JobRunner.SpecialRunner import SpecialRunner
+from JobRunner.config import Config
 from queue import Queue
 
 
@@ -33,7 +34,7 @@ class SpecialRunnerTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.logger = MockLogger()
-        cls.config = {"token": "bogus", "workdir": "/tmp/"}
+        cls.config = Config(workdir="/tmp")
         cls.sr = SpecialRunner(cls.config, "123", logger=cls.logger)
 
     _wdl = """
