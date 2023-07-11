@@ -401,7 +401,7 @@ class JobRunner(object):
         #  subjob container ids
         # Run a job shutdown hook
 
-    def callback(self):
+    def callback(self, job_params=None):
         """
         This method just does the minimal steps to run the call back server.
         """
@@ -427,11 +427,12 @@ class JobRunner(object):
         }
         # config["job_id"] = self.job_id
 
-        job_params = {
-            'method': 'sdk.sdk',
-            'service_ver': '1.0',
-            'params': [{}]
-        }
+        if not job_params:
+            job_params = {
+                'method': 'sdk.sdk',
+                'service_ver': '1.0',
+                'params': [{}]
+            }
 
         self.prov = Provenance(job_params)
         self._init_workdir()
