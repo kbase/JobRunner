@@ -401,7 +401,7 @@ class JobRunner(object):
         #  subjob container ids
         # Run a job shutdown hook
 
-    def callback(self):
+    def callback(self, job_params=None):
         """
         This method just does the minimal steps to run the call back server.
         """
