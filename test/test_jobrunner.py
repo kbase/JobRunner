@@ -182,7 +182,7 @@ class JobRunnerTest(unittest.TestCase):
         self.assertIn("result", out)
         self.assertNotIn("error", out)
 
-    @attr("offline")
+    @attr("online")
     @patch("JobRunner.JobRunner.KBaseAuth", autospec=True)
     @patch("JobRunner.JobRunner.EE2", autospec=True)
     def test_cancel(self, mock_ee2, mock_auth):
