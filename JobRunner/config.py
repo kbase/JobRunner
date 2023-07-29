@@ -45,10 +45,7 @@ class Config():
     user = None
 
     def __init__(self, workdir=None, base_url=None, job_id=None, use_ee2=True):
-        if workdir:
-            self.workdir = workdir
-        else:
-            self.workdir = os.getcwd()
+        self.workdir = workdir if workdir else os.getcwd()
         if not os.path.exists(self.workdir):
             os.makedirs(self.workdir)
             logging.info(f"Creating work directory at {self.workdir}")
