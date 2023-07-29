@@ -1,4 +1,4 @@
-name: KBase Collections tests
+name: KBase JobRunner tests
 
 on:
   pull_request:
