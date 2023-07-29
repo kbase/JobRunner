@@ -32,19 +32,14 @@ def _get_admin_token():
 
 
 class Config():
-    job_id = None
-    workdir = None
-    base_url = "https://ci.kbase.us/services/"
-    ee2_url = None
-    token = None
-    admin_token = None
-    runtime = None
-    hostname = None
-    debug = False
-    cgroup = None
-    user = None
-
     def __init__(self, workdir=None, base_url=None, job_id=None, use_ee2=True):
+       self.job_id = job_id
+       self.base_url = "https://ci.kbase.us/services/"
+       self.ee2_url = None
+       self.debug = False
+       self.cgroup = None
+       self.user = None
+
         self.workdir = workdir if workdir else os.getcwd()
         os.makedirs(self.workdir, exist_ok=True)
         if base_url:
@@ -52,8 +47,6 @@ class Config():
         _auth_ext = "auth/api/legacy/KBase/Sessions/Login"
         if use_ee2:
             self.ee2_url = f"{self.base_url}ee2"
-        else:
-            self.ee2_url = None
         self.catalog_url = f"{self.base_url}catalog"
         self.auth_url = f"{self.base_url}{_auth_ext}"
         self.auth2_url = f"{self.base_url}auth/api/V2/token"
@@ -64,6 +57,4 @@ class Config():
         self.admin_token = _get_admin_token()
         if _DEBUG in os.environ and os.environ[_DEBUG].lower() == "true":
             self.debug = True
-        if job_id:
-            self.job_id = job_id
         self.hostname = gethostname()
