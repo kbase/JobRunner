@@ -3,6 +3,7 @@ import os
 import unittest
 from copy import deepcopy
 from queue import Queue
+from pathlib import Path
 
 from JobRunner.MethodRunner import MethodRunner
 from JobRunner.config import Config
@@ -52,10 +53,7 @@ class MethodRunnerTest(unittest.TestCase):
         # WARNING: don't call any logging metholsds on the context object,
         # it'll result in a NoneType error
         cls.workdir = os.environ.get("JOB_DIR", "/tmp")
-        try:
-            os.makedirs("/tmp/mr/")
-        except FileExistsError:
-            pass
+        os.makedirs("/tmp/mr/", exist_ok=True)
         cls.job_id = "1234"
         cls.cfg = Config(workdir=cls.workdir, job_id=cls.job_id)
         # cls.cfg = {
@@ -97,8 +95,7 @@ class MethodRunnerTest(unittest.TestCase):
         mr = MethodRunner(self.cfg, logger=MockLogger())
         module_info = deepcopy(CATALOG_GET_MODULE_VERSION)
         module_info["docker_img_name"] = "mock_app:latest"
-        if os.path.exists(f"{self.workdir}/workdir/output.json"):
-            os.remove(f"{self.workdir}/workdir/output.json")
+        Path(f"{self.workdir}/workdir/output.json").unlink(missing_ok=True)
         q = Queue()
         params = deepcopy(EE2_JOB_PARAMS)
         params["method"] = "echo_test.noout"
@@ -115,8 +112,7 @@ class MethodRunnerTest(unittest.TestCase):
         mr = MethodRunner(self.cfg, logger=MockLogger())
         module_info = deepcopy(CATALOG_GET_MODULE_VERSION)
         module_info["docker_img_name"] = "mock_app:latest"
-        if os.path.exists(f"{self.workdir}/workdir/output.json"):
-            os.remove(f"{self.workdir}/workdir/output.json")
+        Path(f"{self.workdir}/workdir/output.json").unlink(missing_ok=True)
         q = Queue()
         params = deepcopy(EE2_JOB_PARAMS)
         params["method"] = "echo_test.bogus"
@@ -135,8 +131,7 @@ class MethodRunnerTest(unittest.TestCase):
         module_info = deepcopy(CATALOG_GET_MODULE_VERSION)
         module_info["docker_img_name"] = "mock_app:latest"
         module_info["secure_config_params"] = CATALOG_GET_SECURE_CONFIG_PARAMS
-        if os.path.exists(f"{self.workdir}/workdir/output.json"):
-            os.remove(f"{self.workdir}/workdir/output.json")
+        Path(f"{self.workdir}/workdir/output.json").unlink(missing_ok=True)
         q = Queue()
         params = deepcopy(EE2_JOB_PARAMS)
         params["method"] = "echo_test.bogus"
@@ -149,8 +144,7 @@ class MethodRunnerTest(unittest.TestCase):
         mr = MethodRunner(self.cfg, logger=MockLogger())
         module_info = deepcopy(CATALOG_GET_MODULE_VERSION)
         module_info["docker_img_name"] = "mock_app:latest"
-        if os.path.exists(f"{self.workdir}/workdir/output.json"):
-            os.remove(f"{self.workdir}/workdir/output.json")
+        Path(f"{self.workdir}/workdir/output.json").unlink(missing_ok=True)
         q = Queue()
         params = deepcopy(EE2_JOB_PARAMS)
         params["method"] = "echo_test.badmethod"
