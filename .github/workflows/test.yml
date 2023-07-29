@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.11"]
+        python-version: ["3.9"]
 
     steps:
     - name: Install Docker
@@ -40,7 +40,7 @@ jobs:
       # tried VaultVulp/action-pipenv but pytest wasn't on the path post action
       shell: bash
       run: |
-        pip install -r requirements.txt
+        pip install -r requirements-dev.txt
 
     - name: Run tests
       shell: bash
