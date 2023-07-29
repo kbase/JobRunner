@@ -11,8 +11,6 @@ import json
 class Callback():
     def __init__(self):
         workdir = os.environ.get("JOB_DIR", '/tmp/')
-        if not os.path.exists(workdir):
-            os.makedirs(workdir)
         self.conf = Config(workdir=workdir, use_ee2=False)
         self.ip = os.environ.get('CALLBACK_IP', get_ip())
         self.port = os.environ.get('CALLBACK_PORT')
