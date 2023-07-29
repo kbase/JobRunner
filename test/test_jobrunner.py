@@ -199,7 +199,7 @@ class JobRunnerTest(unittest.TestCase):
         )
         rv = deepcopy(CATALOG_GET_MODULE_VERSION)
         rv["docker_img_name"] = "test/runtester:latest"
-        jr._get_cgroup = MagicMock(return_value='cgroup')
+        jr._get_cgroup = MagicMock(return_value=None)
         jr.cc.catalog.get_module_version = MagicMock(return_value=rv)
         jr.cc.catalog.list_volume_mounts = MagicMock(return_value=[])
         jr.cc.catalog.get_secure_config_params = MagicMock(return_value=None)
