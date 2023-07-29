@@ -1,0 +1,53 @@
+name: KBase Collections tests
+
+on:
+  pull_request:
+    types:
+    - opened
+    - reopened
+    - synchronize
+    - ready_for_review
+  push:
+    # run workflow when merging to main or develop
+    branches:
+      - main
+      - master
+      - develop
+      - scanon/gha
+
+jobs:
+
+  jobsrunner_tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11"]
+
+    steps:
+    - name: Install Docker
+      uses: docker-practice/actions-setup-docker@master
+      timeout-minutes: 12
+    
+    - name: Repo checkout
+      uses: actions/checkout@v3
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install dependecies
+      # tried VaultVulp/action-pipenv but pytest wasn't on the path post action
+      shell: bash
+      run: |
+        pip install pipenv
+        pipenv sync --system --dev
+
+    - name: Run tests
+      shell: bash
+      run: PYTHONPATH=. pytest --cov=src --cov-report=xml test
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        fail_ci_if_error: true
