@@ -14,6 +14,7 @@ on:
       - master
       - develop
       - scanon/gha
+      - scanon/gha2
 
 jobs:
 
@@ -49,7 +50,11 @@ jobs:
 
     - name: Run tests
       shell: bash
-      run: make test
+      run: |
+        export KB_AUTH_TOKEN=bogus
+        export KB_ADMIN_AUTH_TOKEN=bogus
+        export KB_BASE_URL=https://ci.kbase.us/services
+        make test
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
