@@ -46,7 +46,7 @@ jobs:
         make mock
         docker pull kbase/runtester
         docker tag kbase/runtester test/runtester
-        curl -o $HOME/cromwell-44.jar https://github.com/broadinstitute/cromwell/releases/download/44/cromwell-44.jar
+        curl -q -L -o $HOME/cromwell-44.jar https://github.com/broadinstitute/cromwell/releases/download/44/cromwell-44.jar
      
 
     - name: Run tests
