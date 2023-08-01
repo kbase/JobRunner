@@ -14,7 +14,6 @@ on:
       - master
       - develop
       - scanon/gha
-      - scanon/gha2
 
 jobs:
 
