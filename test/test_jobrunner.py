@@ -85,7 +85,7 @@ class JobRunnerTest(unittest.TestCase):
             except:
                 pass
 
-    @attr("offline")
+    @attr("online")
     @patch("JobRunner.JobRunner.KBaseAuth", autospec=True)
     @patch("JobRunner.JobRunner.EE2", autospec=True)
     def test_run_sub(self, mock_ee2, mock_auth):
@@ -182,7 +182,7 @@ class JobRunnerTest(unittest.TestCase):
         self.assertIn("result", out)
         self.assertNotIn("error", out)
 
-    @attr("offline")
+    @attr("online")
     @patch("JobRunner.JobRunner.KBaseAuth", autospec=True)
     @patch("JobRunner.JobRunner.EE2", autospec=True)
     def test_cancel(self, mock_ee2, mock_auth):
@@ -199,7 +199,7 @@ class JobRunnerTest(unittest.TestCase):
         )
         rv = deepcopy(CATALOG_GET_MODULE_VERSION)
         rv["docker_img_name"] = "test/runtester:latest"
-        jr._get_cgroup = MagicMock(return_value='cgroup')
+        jr._get_cgroup = MagicMock(return_value=None)
         jr.cc.catalog.get_module_version = MagicMock(return_value=rv)
         jr.cc.catalog.list_volume_mounts = MagicMock(return_value=[])
         jr.cc.catalog.get_secure_config_params = MagicMock(return_value=None)
@@ -261,6 +261,7 @@ class JobRunnerTest(unittest.TestCase):
         jr.logger.ee2.add_job_logs = MagicMock(return_value=rv)
         jr.ee2.check_job_canceled.return_value = {"finished": False}
         jr.ee2.get_job_params.return_value = params
+        jr.ee2.list_config.return_value = EE2_LIST_CONFIG
         jr._get_cgroup = MagicMock(return_value=None)
         jr._get_token_lifetime = MagicMock(return_value=self.future)
         out = jr.run()
@@ -386,7 +387,7 @@ class JobRunnerTest(unittest.TestCase):
         params["params"] = [{"submit_script": "submit.sl"}]
         jr._submit_special(self.config, "1234", params)
 
-    @attr("offline")
+    @attr("online")
     @patch("JobRunner.JobRunner.KBaseAuth", autospec=True)
     @patch("JobRunner.JobRunner.EE2", autospec=True)
     def test_run_slurm(self, mock_ee2, mock_auth):
@@ -408,14 +409,14 @@ class JobRunnerTest(unittest.TestCase):
         jr.cc.catalog.get_secure_config_params = MagicMock(return_value=None)
         jr.logger.ee2.add_job_logs = MagicMock(return_value=rv)
         jr.ee2.get_job_params.return_value = params
-        jr.ee2.list_config.return_value = config
+        jr.ee2.list_config.return_value = EE2_LIST_CONFIG
         jr.ee2.check_job_canceled.return_value = {"finished": False}
         jr.auth.get_user.return_value = "bogus"
         jr._get_token_lifetime = MagicMock(return_value=self.future)
         out = jr.run()
         self.assertNotIn("error", out)
 
-    @attr("offline")
+    @attr("online")
     @patch("JobRunner.JobRunner.KBaseAuth", autospec=True)
     @patch("JobRunner.JobRunner.EE2", autospec=True)
     def test_run_wdl(self, mock_ee2, mock_auth):
