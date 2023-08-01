@@ -56,6 +56,11 @@ jobs:
         export KB_BASE_URL=https://ci.kbase.us/services
         make test
 
+    - name: Failure logs
+      shell: bash
+      run: |
+        find /tmp
+
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
       with:
