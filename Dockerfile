@@ -8,3 +8,4 @@ RUN pip install -r requirements.txt
 ADD . /src
 
 CMD [ "python3", "-m", "JobRunner.Callback"]
+EXPOSE 9999

@@ -4,6 +4,7 @@ import json
 from queue import Queue
 from unittest.mock import patch
 
+
 _TOKEN = "bogus"
 
 

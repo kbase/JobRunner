@@ -7,6 +7,7 @@ import docker
 from docker.errors import ImageNotFound
 from requests.exceptions import ReadTimeout
 
+
 logging.basicConfig(level=logging.INFO)
 
 
@@ -91,13 +92,13 @@ class DockerRunner:
                     c.reload()
                     if c.status not in ["created", "running"]:
                         dolast = True
-                except Exception:
+                except Exception as e:
                     dolast = True
         except Exception as e:
             if self.logger is not None:
                 self.logger.error(f"Unexpected failure in docker logging. {e}")
             else:
-                print(f"Exception in docker logging for {c.id}")
+                logging.error(f"Exception in docker logging for {c.id}: {e}")
                 raise e
         finally:
 
@@ -151,6 +152,7 @@ class DockerRunner:
             self.logger.error(f"{e}")
 
         if image_id is None:
+            print(f"Couldn't find image for {image}")
             raise Exception(f"Couldn't find image for {image}")
 
         return self.docker.containers.run(
@@ -186,10 +188,10 @@ class DockerRunner:
             c = self._pull_and_run(
                 image=image, env=env, labels=labels, vols=vols, cgroup_parent=cgroup
             )
-        except ReadTimeout:
+        except ReadTimeout as e:
             self.logger.error(
                 f"Docker daemon did not pull and run {image} within {self.timeout} sec")
-            raise
+            raise e
 
         self.containers.append(c)
         # Start a thread to monitor output and handle finished containers
