@@ -13,6 +13,6 @@ mock:
 	docker build -t mock_app ./test/mock_app
 
 test:
-	nosetests -A "not online" --with-coverage --cover-package=JobRunner --cover-erase --cover-html --cover-html-dir=./test_coverage .
+	nosetests -A "not online" -s --with-coverage --cover-package=JobRunner --cover-erase --cover-html --cover-html-dir=./test_coverage .
 
 
