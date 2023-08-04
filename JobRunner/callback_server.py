@@ -5,13 +5,13 @@ from queue import Empty
 
 from sanic import Sanic
 from sanic.config import Config
-from sanic.exceptions import abort
+from sanic.exceptions import SanicException
 from sanic.log import logger
 from sanic.response import json
 
 Config.SANIC_REQUEST_TIMEOUT = 300
 
-app = Sanic(__name__)
+app = Sanic("Callback")
 outputs = dict()
 prov = []
 
@@ -32,7 +32,7 @@ def start_callback_server(ip, port, out_queue, in_queue, token, bypass_token):
     app.config.update(conf)
     if os.environ.get("IN_CONTAINER"):
         ip = "0.0.0.0"
-    app.run(host=ip, port=port, debug=False, access_log=False)
+    app.run(host=ip, port=port, debug=False, access_log=False, motd=False)
 
 
 @app.route("/", methods=["GET", "POST"])
@@ -67,7 +67,7 @@ def _check_rpc_token(token):
         if app.config.get("bypass_token"):
             pass
         else:
-            abort(401)
+            raise SanicException("Unauthorized token", status_code=401)
 
 
 def _handle_provenance():
@@ -85,7 +85,7 @@ def _handle_submit(module, method, data, token):
 
 def _handle_checkjob(data):
     if "params" not in data:
-        abort(404)
+        raise SanicException(status_code=404)
     job_id = data["params"][0]
     _check_finished(f"Checkjob for {job_id}")
     resp = {"finished": 0}
