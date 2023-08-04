@@ -1,6 +1,6 @@
 _IMAGE = "dockerhub-prod.kbase.us/kbase:rast_sdk."
 _IMAGE += "50b012d9b41b71ba31b30355627cf85f2611bc3e"
-_BASE = u"https://ci.kbase.us/services/"
+
 
 CATALOG_GET_MODULE_VERSION = {
     "registration_id": "1553870236585_bab74ed6-4699-47b5-b865-d7130b90f542",
@@ -45,29 +45,33 @@ EE2_JOB_PARAMS = {
     u"service_ver": u"4b5a37e6fed857c199df65191ba3344a467b8aab",
     u"wsid": 42906,
 }
-EE2_LIST_CONFIG = {
-    u"auth-service-url": _BASE + u"auth/api/legacy/KBase/Sessions/Login",
-    u"auth-service-url-allow-insecure": u"false",
-    u"auth-service-url-v2": _BASE + u"auth/api/V2/token",
-    u"awe.client.callback.networks": u"docker0,eth0",
-    u"awe.client.docker.uri": u"unix:///var/run/docker.sock",
-    u"catalog.srv.url": _BASE + u"catalog",
-    u"condor.docker.job.timeout.seconds": u"604800",
-    u"condor.job.shutdown.minutes": u"10080",
-    u"docker.registry.url": u"dockerhub-prod.kbase.us",
-    u"ee.server.version": u"0.2.11",
-    u"handle-url": _BASE + u"handle_service",
-    u"kbase-endpoint": u"https://ci.kbase.us/services",
-    u"ref.data.base": u"/kb/data",
-    u"ref_data_base": u"/kb/data",
-    u"external-url": _BASE + u"ee2",
-    u"shock-url": _BASE + u"shock-api",
-    u"srv.wiz.url": _BASE + u"service_wizard",
-    u"srv-wiz-url": _BASE + u"service_wizard",
-    u"time.before.expiration": u"10",
-    u"workspace-url": _BASE + u"ws",
-    u"scratch": "/tmp",
-}
+
+
+def ee2_list_config(base):
+    res = {
+        u"auth-service-url": base + u"auth/api/legacy/KBase/Sessions/Login",
+        u"auth-service-url-allow-insecure": u"false",
+        u"auth-service-url-v2": base + u"auth/api/V2/token",
+        u"awe.client.callback.networks": u"docker0,eth0",
+        u"awe.client.docker.uri": u"unix:///var/run/docker.sock",
+        u"catalog.srv.url": base + u"catalog",
+        u"condor.docker.job.timeout.seconds": u"604800",
+        u"condor.job.shutdown.minutes": u"10080",
+        u"docker.registry.url": u"dockerhub-prod.kbase.us",
+        u"ee.server.version": u"0.2.11",
+        u"handle-url": base + u"handle_service",
+        u"kbase-endpoint": u"https://ci.kbase.us/services",
+        u"ref.data.base": u"/kb/data",
+        u"ref_data_base": u"/kb/data",
+        u"external-url": base + u"ee2",
+        u"shock-url": base + u"shock-api",
+        u"srv.wiz.url": base + u"service_wizard",
+        u"srv-wiz-url": base + u"service_wizard",
+        u"time.before.expiration": u"10",
+        u"workspace-url": base + u"ws",
+        u"scratch": "/tmp",
+    }
+    return res
 
 CATALOG_LIST_VOLUME_MOUNTS = [
     {

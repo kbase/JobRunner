@@ -13,9 +13,9 @@ from JobRunner.config import Config
 from .mock_data import (
     CATALOG_GET_MODULE_VERSION,
     EE2_JOB_PARAMS,
-    EE2_LIST_CONFIG,
     CATALOG_LIST_VOLUME_MOUNTS,
     AUTH_V2_TOKEN,
+    ee2_list_config,
 )
 from docker.errors import NotFound
 from JobRunner.exceptions import CantRestartJob
@@ -55,18 +55,14 @@ class JobRunnerTest(unittest.TestCase):
         base = "https://ci.kbase.us/services/"
         if "TEST_URL" in os.environ:
             base = "http://%s/services/" % (os.environ["TEST_URL"])
+        cls.ee2_list_config = ee2_list_config(base)
+
         cls.ee2_url = base + "ee2"
         cls.jobid = "1234"
         cls.workdir = os.environ.get("JOB_DIR", "/tmp/jr/")
-        cls.config = Config(job_id=cls.jobid, workdir=cls.workdir)
+        cls.config = Config(job_id=cls.jobid, workdir=cls.workdir, base_url=base)
         cls.future = _time() + 3600
         cls.auth2_url = f"{base}auth/api/V2/token"
-        # cls.config = {
-        #     "catalog-service-url": base + "catalog",
-        #     "auth-service-url": base + "auth/api/legacy/KBase/Sessions/Login",
-        #     "auth2-url": base + "auth/api/V2/token",
-        #     "workdir": cls.workdir
-        # }
         if not os.path.exists(cls.workdir):
             os.mkdir(cls.workdir)
         if "KB_ADMIN_AUTH_TOKEN" not in os.environ:
@@ -84,6 +80,7 @@ class JobRunnerTest(unittest.TestCase):
                 pass
 
     @attr("online")
+    @attr("slow")
     @patch("JobRunner.JobRunner.KBaseAuth", autospec=True)
     @patch("JobRunner.JobRunner.EE2", autospec=True)
     def test_run_sub(self, mock_ee2, mock_auth):
@@ -95,9 +92,6 @@ class JobRunnerTest(unittest.TestCase):
         params = deepcopy(EE2_JOB_PARAMS)
         params["method"] = "RunTester.run_RunTester"
         params["params"] = [{"depth": 3, "size": 1000, "parallel": 5}]
-        config = deepcopy(EE2_LIST_CONFIG)
-        config["auth-service-url"] = self.config.auth_url
-        config["auth.service.url.v2"] = self.auth2_url
         jr = JobRunner(self.config)
         rv = deepcopy(CATALOG_GET_MODULE_VERSION)
         rv["docker_img_name"] = "test/runtester:latest"
@@ -107,7 +101,7 @@ class JobRunnerTest(unittest.TestCase):
         jr.logger.ee2.add_job_logs = MagicMock(return_value=rv)
         jr._get_cgroup = MagicMock(return_value=None)
         jr.ee2.get_job_params.return_value = params
-        jr.ee2.list_config.return_value = config
+        jr.ee2.list_config.return_value = self.ee2_list_config
         jr.ee2.check_job_canceled.return_value = {"finished": False}
         jr.auth.get_user.return_value = "bogus"
         jr._get_token_lifetime = MagicMock(return_value=self.future)
@@ -123,9 +117,6 @@ class JobRunnerTest(unittest.TestCase):
         params = deepcopy(EE2_JOB_PARAMS)
         params["method"] = "mock_app.bogus"
         params["params"] = {"param1": "value1"}
-        config = deepcopy(EE2_LIST_CONFIG)
-        config["auth-service-url"] = self.config.auth_url
-        config["auth.service.url.v2"] = self.auth2_url
         jr = JobRunner(self.config)
         rv = deepcopy(CATALOG_GET_MODULE_VERSION)
         rv["docker_img_name"] = "mock_app:latest"
@@ -135,7 +126,7 @@ class JobRunnerTest(unittest.TestCase):
         jr.logger.ee2.add_job_logs = MagicMock(return_value=rv)
         jr._get_cgroup = MagicMock(return_value=None)
         jr.ee2.get_job_params.return_value = params
-        jr.ee2.list_config.return_value = config
+        jr.ee2.list_config.return_value = self.ee2_list_config
         jr.ee2.check_job_canceled.return_value = {"finished": False}
         jr.auth.get_user.return_value = "bogus"
         jr._get_token_lifetime = MagicMock(return_value=self.future)
@@ -161,8 +152,7 @@ class JobRunnerTest(unittest.TestCase):
         jr.cc.catalog.get_secure_config_params = MagicMock(return_value=None)
         jr.logger.ee2.add_job_logs = MagicMock(return_value=rv)
         jr.ee2.get_job_params.return_value = params
-        jr.ee2.list_config.return_value = deepcopy(EE2_LIST_CONFIG)
-        # jr.ee2.list_config.return_value = EE2_LIST_CONFIG
+        jr.ee2.list_config.return_value = self.ee2_list_config
         jr.ee2.check_job_canceled.return_value = {"finished": False}
         jr.auth.get_user.return_value = "bogus"
         jr._get_token_lifetime = MagicMock(return_value=self.future)
@@ -176,6 +166,7 @@ class JobRunnerTest(unittest.TestCase):
         self.assertNotIn("error", out)
 
     @attr("online")
+    @attr("slow")
     @patch("JobRunner.JobRunner.KBaseAuth", autospec=True)
     @patch("JobRunner.JobRunner.EE2", autospec=True)
     def test_cancel(self, mock_ee2, mock_auth):
@@ -197,8 +188,7 @@ class JobRunnerTest(unittest.TestCase):
         jr.logger.ee2.add_job_logs = MagicMock(return_value=rv)
         jr._get_token_lifetime = MagicMock(return_value=self.future)
         jr.ee2.get_job_params.return_value = params
-        jr.ee2.list_config.return_value = deepcopy(EE2_LIST_CONFIG)
-        # jr.ee2.list_config.return_value = EE2_LIST_CONFIG
+        jr.ee2.list_config.return_value = self.ee2_list_config
         nf = {"finished": False}
         jr.ee2.check_job_canceled.side_effect = [nf, nf, nf, nf, nf, {"finished": True}]
         jr.auth.get_user.return_value = "bogus"
@@ -232,7 +222,7 @@ class JobRunnerTest(unittest.TestCase):
         jr.logger.ee2.add_job_logs = MagicMock(return_value=rv)
         jr._get_token_lifetime = MagicMock(return_value=self.future)
         jr.ee2.get_job_params.return_value = params
-        jr.ee2.list_config.return_value = EE2_LIST_CONFIG
+        jr.ee2.list_config.return_value = self.ee2_list_config
         jr.ee2.check_job_canceled.return_value = {"finished": False}
         jr.auth.get_user.return_value = "bogus"
         out = jr.run()
@@ -240,6 +230,7 @@ class JobRunnerTest(unittest.TestCase):
         # Check that all containers are gone
 
     @attr("online")
+    @attr("fullonline")
     @patch("JobRunner.JobRunner.EE2", autospec=True)
     def test_run_online(self, mock_ee2):
         self._cleanup(self.jobid)
@@ -250,7 +241,7 @@ class JobRunnerTest(unittest.TestCase):
         jr.logger.ee2.add_job_logs = MagicMock(return_value=rv)
         jr.ee2.check_job_canceled.return_value = {"finished": False}
         jr.ee2.get_job_params.return_value = params
-        jr.ee2.list_config.return_value = deepcopy(EE2_LIST_CONFIG)
+        jr.ee2.list_config.return_value = self.ee2_list_config
         jr._get_cgroup = MagicMock(return_value=None)
         jr._get_token_lifetime = MagicMock(return_value=self.future)
         out = jr.run()
@@ -299,7 +290,7 @@ class JobRunnerTest(unittest.TestCase):
         with self.assertRaises(ConnectionError):
             jr.run()
         emsg = "Failed to get job parameters. Exiting."
-        self.assertEquals(mlog.errors[0], emsg)
+        self.assertEqual(mlog.errors[0], emsg)
 
     @attr("offline")
     @patch("JobRunner.JobRunner.EE2", autospec=True)
@@ -339,7 +330,7 @@ class JobRunnerTest(unittest.TestCase):
         jr._get_cgroup = MagicMock(return_value=None)
         jr.logger.ee2.add_job_logs = MagicMock(return_value=rv)
         jr.ee2.get_job_params.return_value = params
-        jr.ee2.list_config.return_value = EE2_LIST_CONFIG
+        jr.ee2.list_config.return_value = self.ee2_list_config
         jr.ee2.check_job_canceled.return_value = {"finished": False}
         jr.auth.get_user.return_value = "bogus"
         jr._get_token_lifetime = MagicMock(return_value=_time())
@@ -370,9 +361,6 @@ class JobRunnerTest(unittest.TestCase):
         params = deepcopy(EE2_JOB_PARAMS)
         params["method"] = "RunTester.run_RunTester"
         params["params"] = [{"do_slurm": 1}]
-        config = deepcopy(EE2_LIST_CONFIG)
-        config["auth-service-url"] = self.config.auth_url
-        config["auth.service.url.v2"] = self.auth2_url
         jr = JobRunner(self.config)
         rv = deepcopy(CATALOG_GET_MODULE_VERSION)
         rv["docker_img_name"] = "test/runtester:latest"
@@ -382,7 +370,7 @@ class JobRunnerTest(unittest.TestCase):
         jr.cc.catalog.get_secure_config_params = MagicMock(return_value=None)
         jr.logger.ee2.add_job_logs = MagicMock(return_value=rv)
         jr.ee2.get_job_params.return_value = params
-        jr.ee2.list_config.return_value = EE2_LIST_CONFIG
+        jr.ee2.list_config.return_value = self.ee2_list_config
         jr.ee2.check_job_canceled.return_value = {"finished": False}
         jr.auth.get_user.return_value = "bogus"
         jr._get_token_lifetime = MagicMock(return_value=self.future)
@@ -397,9 +385,6 @@ class JobRunnerTest(unittest.TestCase):
         params = deepcopy(EE2_JOB_PARAMS)
         params["method"] = "RunTester.run_RunTester"
         params["params"] = [{"do_wdl": 1}]
-        config = deepcopy(EE2_LIST_CONFIG)
-        config["auth-service-url"] = self.config.auth_url
-        config["auth.service.url.v2"] = self.auth2_url
         jr = JobRunner(self.config)
         mlog = MockLogger()
         jr.logger = mlog
@@ -411,7 +396,7 @@ class JobRunnerTest(unittest.TestCase):
         jr.cc.catalog.list_volume_mounts = MagicMock(return_value=[])
         jr.cc.catalog.get_secure_config_params = MagicMock(return_value=None)
         jr.ee2.get_job_params.return_value = params
-        jr.ee2.list_config.return_value = config
+        jr.ee2.list_config.return_value = self.ee2_list_config
         jr.ee2.check_job_canceled.return_value = {"finished": False}
         jr.auth.get_user.return_value = "bogus"
         jr._get_token_lifetime = MagicMock(return_value=self.future)
