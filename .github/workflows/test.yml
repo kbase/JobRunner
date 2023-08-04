@@ -58,7 +58,7 @@ jobs:
         export KB_BASE_URL=https://ci.kbase.us/services
         IP=$(curl https://api.ipify.org)
         export TEST_URL="$IP:8888"
-        mock-server --dir=./test/mock-server --address=0.0.0.0
+        mock-server --dir=./test/mock-server --address=0.0.0.0 &
         make test
 
     - name: Failure logs
