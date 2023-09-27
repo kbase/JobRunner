@@ -48,6 +48,9 @@ class Callback():
         if not self.port:
             self.port = find_free_port()
         self.callback_url = f"http://{self.ip}:{self.port}"
+        print("*" * 30)
+        print("callback url: ", self.callback_url)
+        print("*" * 30)
         os.environ["SDK_CALLBACK_URL"] = self.callback_url
         self.cbs = Process(target=self.run, daemon=False)
         self.cbs.start()

@@ -194,6 +194,9 @@ class MethodRunner:
                 k = "KBASE_SECURE_CONFIG_PARAM_{}".format(p["param_name"])
                 env[k] = p["param_value"]
 
+        print("*" * 30)
+        print("env is: ", env)
+        print("*" * 30)
         # Set up labels used for job administration purposes
 
         labels = {
