@@ -31,6 +31,7 @@ class CatalogCache(object):
             if self.admin_token:
                 req["load_all_versions"] = 0
                 sp = self.catalog.get_secure_config_params(req)
+                print("get sp from catalog website: ", sp)
             module_info["secure_config_params"] = sp
             module_info["cached"] = False
             self.module_cache[module] = module_info

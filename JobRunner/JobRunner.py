@@ -131,6 +131,9 @@ class JobRunner(object):
 
         # TODO Fail gracefully if this step fails. For example, setting service_ver='fake'
         module_info = self.cc.get_module_info(module, service_ver)
+        print("*" * 30)
+        print("module_info: ", module_info)
+        print("*" * 30)
 
         git_url = module_info["git_url"]
         git_commit = module_info["git_commit_hash"]
