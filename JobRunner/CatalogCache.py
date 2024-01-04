@@ -3,11 +3,14 @@ from clients.CatalogClient import Catalog
 
 class CatalogCache(object):
     def __init__(self, config):
+        self.admin_token = config.get("admin_token")
         self.catalog_url = config.get("catalog-service-url")
         self.catalog = Catalog(self.catalog_url, token=config["admin_token"])
         self.module_cache = dict()
 
     def get_volume_mounts(self, module, method, cgroup):
+        if self.admin_token is None:
+            return []
         req = {"module_name": module, "function_name": method, "client_group": cgroup}
         resp = self.catalog.list_volume_mounts(req)
         if len(resp) > 0:
@@ -24,8 +27,10 @@ class CatalogCache(object):
             # Get the image version from the catalog and cache it
             module_info = self.catalog.get_module_version(req)
             # Lookup secure params
-            req["load_all_versions"] = 0
-            sp = self.catalog.get_secure_config_params(req)
+            sp = None
+            if self.admin_token:
+                req["load_all_versions"] = 0
+                sp = self.catalog.get_secure_config_params(req)
             module_info["secure_config_params"] = sp
             module_info["cached"] = False
             self.module_cache[module] = module_info
