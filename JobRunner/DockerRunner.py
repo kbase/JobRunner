@@ -3,11 +3,8 @@ import logging
 from threading import Thread
 from time import sleep as _sleep
 from time import time as _time
-from typing import List
-
 import docker
 from docker.errors import ImageNotFound
-from docker.models.containers import Container
 from requests.exceptions import ReadTimeout
 
 logging.basicConfig(level=logging.INFO)
@@ -42,6 +39,7 @@ class DockerRunner:
         self.log_interval = 1
         self.debug = debug
         atexit.register(self._cleanup_docker_containers)
+        self.pulled = dict()
 
     @staticmethod
     def _sort_lines_by_time(sout, serr):
@@ -138,14 +136,17 @@ class DockerRunner:
         image_id = None
 
         try:
-            # If no tag is specified, will return a list
-            image_id = self.docker.images.pull(image).id
+            # See if the image exists
+            image_id = self.docker.images.get(name=image).id
+            self.pulled[image] = image_id
         except docker.errors.ImageNotFound as e:
             self.logger.error(f"{e}")
 
         try:
-            # See if the image exists
-            image_id = self.docker.images.get(name=image).id
+            # If no tag is specified, will return a list
+            if not self.pulled.get(image):
+                image_id = self.docker.images.pull(image).id
+                self.pulled[image] = image_id
         except docker.errors.ImageNotFound as e:
             self.logger.error(f"{e}")
 
