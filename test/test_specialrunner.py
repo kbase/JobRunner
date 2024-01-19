@@ -36,6 +36,10 @@ class SpecialRunnerTest(unittest.TestCase):
         cls.logger = MockLogger()
         cls.config = Config(workdir="/tmp")
         cls.sr = SpecialRunner(cls.config, "123", logger=cls.logger)
+        test_dir = os.path.dirname(os.path.abspath(__file__))
+        bin_dir = os.path.join(test_dir, "bin")
+        scripts_dir = os.path.join(test_dir, "../scripts/")
+        os.environ["PATH"] = ":".join([bin_dir, scripts_dir, os.environ["PATH"]])
 
     _wdl = """
     task hello_world {
