@@ -1,3 +1,6 @@
+import os
+
+
 _IMAGE = "dockerhub-prod.kbase.us/kbase:rast_sdk."
 _IMAGE += "50b012d9b41b71ba31b30355627cf85f2611bc3e"
 
@@ -48,6 +51,7 @@ EE2_JOB_PARAMS = {
 
 
 def ee2_list_config(base):
+    refdata = os.environ.get("KB_REF_DATA", "/kb/data")
     res = {
         u"auth-service-url": base + u"auth/api/legacy/KBase/Sessions/Login",
         u"auth-service-url-allow-insecure": u"false",
@@ -61,8 +65,8 @@ def ee2_list_config(base):
         u"ee.server.version": u"0.2.11",
         u"handle-url": base + u"handle_service",
         u"kbase-endpoint": u"https://ci.kbase.us/services",
-        u"ref.data.base": u"/kb/data",
-        u"ref_data_base": u"/kb/data",
+        u"ref.data.base": refdata,
+        u"ref_data_base": refdata,
         u"external-url": base + u"ee2",
         u"shock-url": base + u"shock-api",
         u"srv.wiz.url": base + u"service_wizard",

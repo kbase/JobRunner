@@ -5,7 +5,8 @@ from copy import deepcopy
 from time import time as _time
 from unittest.mock import patch, MagicMock
 
-from nose.plugins.attrib import attr
+#from nose.plugins.attrib import attr
+import pytest
 from requests import ConnectionError
 
 from JobRunner.JobRunner import JobRunner
@@ -67,6 +68,10 @@ class JobRunnerTest(unittest.TestCase):
             os.mkdir(cls.workdir)
         if "KB_ADMIN_AUTH_TOKEN" not in os.environ:
             os.environ["KB_ADMIN_AUTH_TOKEN"] = "bogus"
+        test_dir = os.path.dirname(os.path.abspath(__file__))
+        bin_dir = os.path.join(test_dir, "bin")
+        scripts_dir = os.path.join(test_dir, "../scripts/")
+        os.environ["PATH"] = ":".join([bin_dir, scripts_dir, os.environ["PATH"]])
 
     def _cleanup(self, job):
         d = os.path.join(self.workdir, "workdir")
@@ -79,8 +84,8 @@ class JobRunnerTest(unittest.TestCase):
             except Exception:
                 pass
 
-    @attr("online")
-    @attr("slow")
+#    @attr("online")
+#    @attr("slow")
     @patch("JobRunner.JobRunner.KBaseAuth", autospec=True)
     @patch("JobRunner.JobRunner.EE2", autospec=True)
     def test_run_sub(self, mock_ee2, mock_auth):
@@ -109,7 +114,7 @@ class JobRunnerTest(unittest.TestCase):
         self.assertIn("result", out)
         self.assertNotIn("error", out)
 
-    @attr("offline")
+#    @attr("offline")
     @patch("JobRunner.JobRunner.KBaseAuth", autospec=True)
     @patch("JobRunner.JobRunner.EE2", autospec=True)
     def test_run(self, mock_ee2, mock_auth):
@@ -134,7 +139,7 @@ class JobRunnerTest(unittest.TestCase):
         self.assertIn("result", out)
         self.assertNotIn("error", out)
 
-    @attr("offline")
+#    @attr("offline")
     @patch("JobRunner.JobRunner.KBaseAuth", autospec=True)
     @patch("JobRunner.JobRunner.EE2", autospec=True)
     def test_run_volume(self, mock_ee2, mock_auth):
@@ -165,8 +170,8 @@ class JobRunnerTest(unittest.TestCase):
         self.assertIn("result", out)
         self.assertNotIn("error", out)
 
-    @attr("online")
-    @attr("slow")
+#    @attr("online")
+#    @attr("slow")
     @patch("JobRunner.JobRunner.KBaseAuth", autospec=True)
     @patch("JobRunner.JobRunner.EE2", autospec=True)
     def test_cancel(self, mock_ee2, mock_auth):
@@ -202,7 +207,7 @@ class JobRunnerTest(unittest.TestCase):
             with self.assertRaises(expected_exception=NotFound):
                 c.reload()
 
-    @attr("offline")
+#    @attr("offline")
     @patch("JobRunner.JobRunner.KBaseAuth", autospec=True)
     @patch("JobRunner.JobRunner.EE2", autospec=True)
     def test_max_jobs(self, mock_ee2, mock_auth):
@@ -229,8 +234,9 @@ class JobRunnerTest(unittest.TestCase):
         self.assertIn("error", out)
         # Check that all containers are gone
 
-    @attr("online")
-    @attr("fullonline")
+#    @attr("online")
+#    @attr("fullonline")
+    @pytest.mark.fullonline
     @patch("JobRunner.JobRunner.EE2", autospec=True)
     def test_run_online(self, mock_ee2):
         self._cleanup(self.jobid)
@@ -292,7 +298,7 @@ class JobRunnerTest(unittest.TestCase):
         emsg = "Failed to get job parameters. Exiting."
         self.assertEqual(mlog.errors[0], emsg)
 
-    @attr("offline")
+#    @attr("offline")
     @patch("JobRunner.JobRunner.EE2", autospec=True)
     @patch("JobRunner.JobRunner.KBaseAuth", autospec=True)
     @patch("JobRunner.JobRunner.requests", autospec=True)
@@ -311,7 +317,7 @@ class JobRunnerTest(unittest.TestCase):
         with self.assertRaises(OSError):
             jr._get_token_lifetime()
 
-    @attr("offline")
+#    @attr("offline")
     @patch("JobRunner.JobRunner.EE2", autospec=True)
     @patch("JobRunner.JobRunner.KBaseAuth", autospec=True)
     def test_expire_loop(self, mock_auth, mock_ee2):
@@ -353,7 +359,7 @@ class JobRunnerTest(unittest.TestCase):
         params["params"] = [{"submit_script": "submit.sl"}]
         jr._submit_special(self.config, "1234", params)
 
-    @attr("online")
+#    @attr("online")
     @patch("JobRunner.JobRunner.KBaseAuth", autospec=True)
     @patch("JobRunner.JobRunner.EE2", autospec=True)
     def test_run_slurm(self, mock_ee2, mock_auth):
@@ -374,10 +380,11 @@ class JobRunnerTest(unittest.TestCase):
         jr.ee2.check_job_canceled.return_value = {"finished": False}
         jr.auth.get_user.return_value = "bogus"
         jr._get_token_lifetime = MagicMock(return_value=self.future)
+
         out = jr.run()
         self.assertNotIn("error", out)
 
-    @attr("online")
+#    @attr("online")
     @patch("JobRunner.JobRunner.KBaseAuth", autospec=True)
     @patch("JobRunner.JobRunner.EE2", autospec=True)
     def test_run_wdl(self, mock_ee2, mock_auth):

@@ -65,6 +65,7 @@ class MethodRunnerTest(unittest.TestCase):
         cls.logger = MockLogger()
         cls.mr = MethodRunner(cls.cfg, logger=cls.logger)
         base = "https://ci.kbase.us/services/"
+        refdata = os.environ.get("KB_REF_DATA", "/kb/data")
         cls.conf = {
             "kbase-endpoint": base,
             "workspace-url": base,
@@ -74,7 +75,7 @@ class MethodRunnerTest(unittest.TestCase):
             "auth-service-url-v2": base,
             "external-url": base,
             "srv-wiz-url": base,
-            "ref_data_base":  "/kb/data",
+            "ref_data_base":  refdata,
             "auth-service-url-allow-insecure": True,
             "scratch": "/kb/module/work/tmp",
             "user": "mrbogus",
