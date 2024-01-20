@@ -384,7 +384,7 @@ class JobRunnerTest(unittest.TestCase):
         params["params"] = [{"submit_script": "submit.sl"}]
         jr._submit_special(self.config, "1234", params)
 
-    @attr("offline")
+    @attr("online")
     @patch("JobRunner.JobRunner.KBaseAuth", autospec=True)
     @patch("JobRunner.JobRunner.EE2", autospec=True)
     def test_run_slurm(self, mock_ee2, mock_auth):
