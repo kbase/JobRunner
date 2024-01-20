@@ -34,7 +34,7 @@ class MockDocker(object):
 
     def logs(self, stdout=True, stderr=False, since=None, until=None, timestamps=False):
         if self.err_log:
-            raise ValueError()
+            raise ValueError(self.err_log)
         return []
 
     def reload(self):
@@ -51,13 +51,16 @@ class DockerRunnerTest(unittest.TestCase):
         mlog = MockLogger()
         dr = DockerRunner(logger=mlog)
         inp = {"method": "mock_app.bogus"}
-        with open("/tmp/input.json", "w") as f:
+        workdir = os.environ.get("JOB_DIR", "/tmp")
+        with open(f"{workdir}/input.json", "w") as f:
             f.write(json.dumps(inp))
-        vols = {"/tmp": {"bind": "/kb/module/work", "mode": "rw"}}
-        of = "/tmp/output.json"
+        vols = {workdir: {"bind": "/kb/module/work", "mode": "rw"}}
+        of = f"{workdir}/output.json"
         if os.path.exists(of):
             os.remove(of)
         c = dr.run("1234", "mock_app:latest", {}, vols, {}, [])
+        while c.status in ['created']:
+            _sleep(1)
         _sleep(2)
         self.assertTrue(os.path.exists(of))
 
@@ -99,4 +102,3 @@ class DockerRunnerTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             dr._shepherd(c, "1234", [q])
         result = q.get()
-        print(result)

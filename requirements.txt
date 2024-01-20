@@ -1,2 +1,6 @@
-sanic==21.9.3
+sanic==21.12.2
 docker==3.6.0
+requests==2.19.0
+websockets==10.0
+sniffio
+anyio

@@ -2,10 +2,8 @@ import logging
 import os
 import signal
 import socket
-import sys
 from multiprocessing import Process, Queue
 from queue import Empty
-from socket import gethostname
 from time import sleep as _sleep
 from time import time as _time
 
@@ -16,11 +14,11 @@ from clients.execution_engine2Client import execution_engine2 as EE2
 from .CatalogCache import CatalogCache
 from .MethodRunner import MethodRunner
 from .SpecialRunner import SpecialRunner
+from .config import Config
 from .callback_server import start_callback_server
 from .exceptions import CantRestartJob
 from .logger import Logger
 from .provenance import Provenance
-from .mock_ee2 import Mock_EE2
 
 logging.basicConfig(format="%(created)s %(levelname)s: %(message)s",
                     level=logging.INFO)
@@ -33,60 +31,46 @@ class JobRunner(object):
     to support subjobs and provenenace calls.
     """
 
-    def __init__(self, config, ee2_url, job_id, token, admin_token,
-                 debug=False, port=None):
+    def __init__(self, config: Config, port=None):
         """
         inputs: config dictionary, EE2 URL, Job id, Token, Admin Token
         """
 
-        if ee2_url:
-            self.ee2 = EE2(url=ee2_url, timeout=60)
-        else:
-            self.ee2 = Mock_EE2()
-        self.logger = Logger(ee2_url, job_id, ee2=self.ee2)
-        self.token = token
+        self.ee2 = None
+        if config.ee2_url:
+            self.ee2 = EE2(url=config.ee2_url, timeout=60)
+        self.logger = Logger(config.job_id, ee2=self.ee2)
+        self.token = config.token
         self.client_group = os.environ.get("CLIENTGROUP", "None")
         self.bypass_token = os.environ.get("BYPASS_TOKEN", True)
-        self.admin_token = admin_token
-        self.config = self._init_config(config, job_id, ee2_url)
+        self.admin_token = config.admin_token
+        self.config = config
+        # self.config = self._init_config(config, job_id, ee2_url)
 
-        self.hostname = gethostname()
-        self.auth = KBaseAuth(config.get("auth-service-url"))
-        self.job_id = job_id
-        self.workdir = config.get("workdir", "/mnt/awe/condor")
+        self.hostname = config.hostname
+        self.auth = KBaseAuth(config.auth_url)
+        self.job_id = config.job_id
+        self.workdir = config.workdir
         self.jr_queue = Queue()
         self.callback_queue = Queue()
         self.prov = None
         self._init_callback_url(port=port)
-        self.debug = debug
-        self.mr = MethodRunner(
-            self.config, job_id, logger=self.logger, debug=self.debug
-        )
-        self.sr = SpecialRunner(self.config, job_id, logger=self.logger)
+        self.debug = config.debug
+        self.mr = MethodRunner(self.config, logger=self.logger, debug=self.debug)
+        self.sr = SpecialRunner(self.config, self.job_id, logger=self.logger)
         self.cc = CatalogCache(config)
-        self.max_task = config.get("max_tasks", 20)
         self.cbs = None
 
         signal.signal(signal.SIGINT, self.shutdown)
 
-    def _init_config(self, config, job_id, ee2_url):
-        """
-        Initialize config dictionary
-        """
-        config["hostname"] = gethostname()
-        config["job_id"] = job_id
-        config["ee2_url"] = ee2_url
-        token = self.token
-        config["token"] = token
-        config["admin_token"] = self.admin_token
-        return config
-
-    def _check_job_status(self):
+    def _check_job_status(self) -> bool:
         """
         returns True if the job is still okay to run.
         """
+        status = {'finished': False}
         try:
-            status = self.ee2.check_job_canceled({"job_id": self.job_id})
+            if self.ee2:
+                status = self.ee2.check_job_canceled({"job_id": self.job_id})
         except Exception as e:
             self.logger.error(
                 f"Warning: Job cancel check failed due to {e}. However, the job will continue to run."
@@ -105,7 +89,7 @@ class JobRunner(object):
             self.logger.error("Missing workdir")
             raise OSError("Missing Working Directory")
 
-    def _get_cgroup(self):
+    def _get_cgroup(self) -> str:
         """ Examine /proc/PID/cgroup to get the cgroup the runner is using """
         if os.environ.get("NO_CGROUP"):
             return None
@@ -124,12 +108,12 @@ class JobRunner(object):
 
         raise Exception(f"Couldn't parse out cgroup from {cfile}")
 
-    def _submit_special(self, config, job_id, job_params):
+    def _submit_special(self, config: dict, job_id: str, job_params: dict):
         """
         Handler for methods such as CWL, WDL and HPC
         """
         (module, method) = job_params["method"].split(".")
-        self.logger.log("Submit %s as a %s:%s job" % (job_id, module, method))
+        self.logger.log(f"Submit {job_id} as a {module}:{method} job")
 
         self.sr.run(
             config,
@@ -139,7 +123,7 @@ class JobRunner(object):
             fin_q=[self.jr_queue],
         )
 
-    def _submit(self, config, job_id, job_params, subjob=True):
+    def _submit(self, config: dict, job_id: str, job_params: dict, subjob=True):
         (module, method) = job_params["method"].split(".")
         service_ver = job_params.get("service_ver")
         if service_ver is None:
@@ -178,16 +162,16 @@ class JobRunner(object):
         self.mr.cleanup_all(debug=self.debug)
 
     def shutdown(self, sig, bt):
-        print("Recieved an interrupt")
+        logging.warning("Recieved an interrupt")
         # Send a cancel to the queue
         self.jr_queue.put(["cancel", None, None])
 
-    def _watch(self, config):
+    def _watch(self, config: dict) -> dict:
         # Run a thread to check for expired token
         # Run a thread for 7 day max job runtime
         cont = True
         ct = 1
-        exp_time = self._get_token_lifetime(config) - 600
+        exp_time = self._get_token_lifetime() - 600
         while cont:
             try:
                 req = self.jr_queue.get(timeout=1)
@@ -197,7 +181,7 @@ class JobRunner(object):
                     self._cancel()
                     return {"error": err}
                 if req[0] == "submit":
-                    if ct > self.max_task:
+                    if ct > self.config.max_tasks:
                         self.logger.error("Too many subtasks")
                         self._cancel()
                         return {"error": "Canceled or unexpected error"}
@@ -231,7 +215,7 @@ class JobRunner(object):
             except Empty:
                 pass
             if ct == 0:
-                print("Count got to 0 without finish")
+                logging.error("Count got to 0 without finish")
                 # This shouldn't happen
                 return
             # Run cancellation / finish job checker
@@ -263,32 +247,32 @@ class JobRunner(object):
         self.logger.log("Job runner recieved Callback URL {}".format(url))
         self.callback_url = url
 
-    def _update_prov(self, action):
+    def _update_prov(self, action: dict):
         self.prov.add_subaction(action)
         self.callback_queue.put(["prov", None, self.prov.get_prov()])
 
     def _validate_token(self):
         # Validate token and get user name
         try:
-            user = self.auth.get_user(self.config["token"])
+            user = self.auth.get_user(self.token)
         except Exception as e:
             self.logger.error("Token validation failed")
             raise Exception(e)
 
         return user
 
-    def _get_token_lifetime(self, config):
+    def _get_token_lifetime(self):
         try:
-            url = config.get("auth-service-url-v2")
+            url = self.config.auth2_url
             logging.info(f"About to get token lifetime from {url} for user token")
-            header = {"Authorization": self.config["token"]}
+            header = {"Authorization": self.token}
             resp = requests.get(url, headers=header).json()
             return resp["expires"]
         except Exception as e:
             self.logger.error("Failed to get token lifetime")
             raise e
 
-    def _retry_finish(self, finish_job_params, success):
+    def _retry_finish(self, finish_job_params: dict, success: bool):
         """
         In case of failure to finish, retry once
         """
@@ -300,10 +284,12 @@ class JobRunner(object):
                 finish_job_params["job_output"] = {}
 
         try:
-            self.ee2.finish_job(finish_job_params)
+            if self.ee2:
+                self.ee2.finish_job(finish_job_params)
         except Exception:
             _sleep(30)
-            self.ee2.finish_job(finish_job_params)
+            if self.ee2:
+                self.ee2.finish_job(finish_job_params)
 
     def run(self):
         """
@@ -347,7 +333,7 @@ class JobRunner(object):
             self.logger.error("Failed to config . Exiting.")
             raise e
 
-        config["job_id"] = self.job_id
+        # config["job_id"] = self.job_id
         self.logger.log(
             f"Server version of Execution Engine: {config.get('ee.server.version')}"
         )
@@ -364,9 +350,8 @@ class JobRunner(object):
 
         logging.info("Initing work dir")
         self._init_workdir()
-        config["workdir"] = self.workdir
-        config["user"] = self._validate_token()
-        config["cgroup"] = self._get_cgroup()
+        self.config.user = self._validate_token()
+        self.config.cgroup = self._get_cgroup()
 
         logging.info("Setting provenance")
         self.prov = Provenance(job_params)
@@ -416,45 +401,45 @@ class JobRunner(object):
         #  subjob container ids
         # Run a job shutdown hook
 
-    def callback(self):
+    def callback(self, job_params=None):
         """
         This method just does the minimal steps to run the call back server.
         """
-        running_msg = f"Running job {self.job_id} ({os.environ.get('CONDOR_ID')}) on {self.hostname} ({self.ip}) in {self.workdir}"
+        running_msg = f"Running job {self.job_id} on {self.hostname} ({self.ip}) in {self.workdir}"
 
         self.logger.log(running_msg)
 
-        base = self.config['catalog-service-url'].replace('catalog', '')
+        base = self.config.base_url
         # TODO: Some of this should come from some config file that may live
         #       in the module being tested.
         config = {
             'kbase-endpoint': base,
-            'external-url': base + 'ee2',
-            'shock-url': base + 'shock-api',
-            'handle-url': base + 'handle_service',
-            'srv-wiz-url': base + 'service_wizard',
-            'auth-service-url': base + 'auth/api/legacy/KBase/Sessions/Login',
-            'auth-service-url-v2': base + 'auth/api/V2/token',
+            'external-url': f"{base}/ee2",
+            'shock-url': f"{base}shock-api",
+            'handle-url': f"{base}handle_service",
+            'srv-wiz-url': f"{base}service_wizard",
+            'auth-service-url': f"{base}auth/api/legacy/KBase/Sessions/Login",
+            'auth-service-url-v2': f"{base}auth/api/V2/token",
             'auth-service-url-allow-insecure': False,
             'scratch': '/kb/module/work/tmp',
-            'workspace-url': base + 'ws',
+            'workspace-url': f"{base}ws",
             'ref_data_base': '/tmp/db'
         }
-        config["job_id"] = self.job_id
+        # config["job_id"] = self.job_id
 
-        job_params = {
-            'method': 'sdk.sdk',
-            'service_ver': '1.0',
-            'params': {}
-        }
+        if not job_params:
+            job_params = {
+                'method': 'sdk.sdk',
+                'service_ver': '1.0',
+                'params': [{}]
+            }
 
         self.prov = Provenance(job_params)
         self._init_workdir()
         job_dir = self.workdir
         # TODO: This is calling a private method.
         self.mr._init_workdir(config, job_dir, job_params)
-        config["workdir"] = self.workdir
-        config["user"] = self._validate_token()
+        self.config.user = self._validate_token()
 
         # Start the callback server
         logging.info("Starting callback server")

@@ -1,62 +1,44 @@
 import os
 from multiprocessing import Process
+from JobRunner.config import Config
 from JobRunner.JobRunner import JobRunner
 import socket
 from contextlib import closing
 import requests
-
-_TOKEN_ENV = "KB_AUTH_TOKEN"
-_ADMIN_TOKEN_ENV = "KB_ADMIN_AUTH_TOKEN"
-_BASE_URL = "KB_BASE_URL"
-_DEFAULT_BASE_URL = "https://kbase.us/services/"
-
-
-class Config():
-    def __init__(self):
-        self.token = _get_token()
-        self.admin_token = _get_admin_token()
-        self.base = os.environ.get(_BASE_URL, _DEFAULT_BASE_URL).rstrip("/")
-        self.catalog_url = f"{self.base}/catalog"
-        self.workdir = os.environ.get("JOB_DIR", '/tmp/')
-        if not os.path.exists(self.workdir):
-            os.makedirs(self.workdir)
-        auth_ext = 'auth/api/legacy/KBase/Sessions/Login'
-        self.auth_service_url = f"{self.base}/{auth_ext}"
-        # Input job id and njs_service URL
-        self.runtime = "docker"
-        if 'USE_SHIFTER' in os.environ:
-            self.runtime = "shifter"
-        self.max_tasks = int(os.environ.get('JR_MAX_TASKS', '10'))
-
-    def get_conf(self):
-        config = {}
-        config['workdir'] = self.workdir
-        config['catalog-service-url'] = self.catalog_url
-        config['auth-service-url'] = self.auth_service_url
-        config['runtime'] = self.runtime
-        config['max_tasks'] = self.max_tasks
-        return config
+import json
 
 
 class Callback():
     def __init__(self):
-        self.conf = Config()
+        workdir = os.environ.get("JOB_DIR", '/tmp/')
+        self.conf = Config(workdir=workdir, use_ee2=False)
         self.ip = os.environ.get('CALLBACK_IP', get_ip())
         self.port = os.environ.get('CALLBACK_PORT')
         self.cbs = None
         self.callback_url = None
 
+    def load_prov(self, job_params_file):
+        job_params = json.load(open(job_params_file))
+        for kn in ['method', 'service_ver', 'params']:
+            if kn not in job_params:
+                raise ValueError(f"Provenance file is missing {kn}")
+        params = job_params['params']
+        if not isinstance(params, list):
+            raise ValueError("params in Provenenace file isn't a list")
+        return job_params
+
     def run(self):
         os.environ['CALLBACK_IP'] = self.ip
+        job_params = None
+        job_params_file = os.environ.get('PROV_FILE')
+
+        if job_params_file:
+            job_params = self.load_prov(job_params_file)
 
         try:
-            jr = JobRunner(self.conf.get_conf(),
-                           None,
-                           'test',
-                           self.conf.token,
-                           self.conf.admin_token,
+            jr = JobRunner(self.conf,
                            port=self.port)
-            jr.callback()
+            jr.callback(job_params=job_params)
         except Exception as e:
             print("An unhandled error was encountered")
             print(e)
@@ -72,31 +54,6 @@ class Callback():
 
     def stop(self):
         self.cbs.terminate()
-
-
-def _get_token():
-    # Get the token from the environment or a file.
-    # Set the KB_AUTH_TOKEN if not set.
-    if _TOKEN_ENV in os.environ:
-        token = os.environ[_TOKEN_ENV]
-    else:
-        try:
-            with open('token') as f:
-                token = f.read().rstrip()
-            os.environ[_TOKEN_ENV] = token
-        except Exception:
-            raise OSError("No token found")
-    return token
-
-
-def _get_admin_token():
-    if _ADMIN_TOKEN_ENV not in os.environ:
-        print("Warning: Missing admin token needed for volume mounts.")
-        return None
-    admin_token = os.environ.pop(_ADMIN_TOKEN_ENV)
-    if _ADMIN_TOKEN_ENV in os.environ:
-        raise OSError("Failed to sanitize environment")
-    return admin_token
 
 
 def get_ip():

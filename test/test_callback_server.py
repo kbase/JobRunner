@@ -3,7 +3,7 @@ from JobRunner.callback_server import app
 import json
 from queue import Queue
 from unittest.mock import patch
-from pprint import  pprint
+
 
 _TOKEN = "bogus"
 
@@ -12,7 +12,8 @@ def _post(data):
     # Returns -> httpx.Response:
     header = {"Authorization": _TOKEN}
     sa = {"access_log": False}
-    return app.test_client.post("/", server_kwargs=sa, headers=header, data=data)[1]
+    return app.test_client.post("/", server_kwargs=sa,
+                                headers=header, data=data)[1]
 
 
 def test_index_returns_200():
@@ -22,7 +23,6 @@ def test_index_returns_200():
 
 def test_index_post_empty():
     response = _post(None)
-    print(response.json)
     assert response.json == [{}]
 
 
@@ -39,14 +39,13 @@ def test_index_post():
     assert "submit" in mess
     data = json.dumps({"method": "bogus._check_job", "params": [job_id]})
     response = _post(data)
-    pprint(response)
 
     assert "result" in response.json
-    assert response.json["result"][0]["finished"] is 0
+    assert response.json["result"][0]["finished"] == 0
     data = json.dumps({"method": "bogus.get_provenance", "params": [job_id]})
     response = _post(data)
     assert "result" in response.json
-    assert response.json["result"][0] in [None,[]]
+    assert response.json["result"][0] in [None, []]
     in_q.put(["prov", job_id, "bogus"])
     response = _post(data)
     assert "result" in response.json
@@ -55,7 +54,7 @@ def test_index_post():
     data = json.dumps({"method": "bogus._check_job", "params": [job_id]})
     response = _post(data)
     assert "result" in response.json
-    assert response.json["result"][0]["finished"] is 1
+    assert response.json["result"][0]["finished"] == 1
     assert "foo" in response.json["result"][0]
 
 
@@ -71,4 +70,3 @@ def test_index_submit_sync(mock_uuid):
     response = _post(data)
     assert "finished" in response.json
     assert "foo" in response.json
-
