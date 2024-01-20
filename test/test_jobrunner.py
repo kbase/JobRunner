@@ -84,7 +84,7 @@ class JobRunnerTest(unittest.TestCase):
             except OSError:
                 pass
 
-    @attr("offline")
+    @attr("online")
     @patch("JobRunner.JobRunner.KBaseAuth", autospec=True)
     @patch("JobRunner.JobRunner.EE2", autospec=True)
     def test_run_sub(self, mock_ee2, mock_auth):
@@ -413,7 +413,7 @@ class JobRunnerTest(unittest.TestCase):
         out = jr.run()
         self.assertNotIn("error", out)
 
-    @attr("offline")
+    @attr("online")
     @patch("JobRunner.JobRunner.KBaseAuth", autospec=True)
     @patch("JobRunner.JobRunner.EE2", autospec=True)
     def test_run_wdl(self, mock_ee2, mock_auth):
