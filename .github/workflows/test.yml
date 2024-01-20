@@ -49,6 +49,9 @@ jobs:
 
     - name: Run tests
       shell: bash
+      env:
+          KB_AUTH_TOKEN: ${{ secrets.KBASE_CI_TOKEN  }}
+          KB_ADMIN_AUTH_TOKEN: ${{ secrets.KBASE_CI_TOKEN  }}
       run: make test
 
     - name: Upload coverage to Codecov
