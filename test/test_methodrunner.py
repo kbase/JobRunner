@@ -70,7 +70,7 @@ class MethodRunnerTest(unittest.TestCase):
             "auth-service-url-v2": base,
             "external-url": base,
             "srv-wiz-url" : base,
-            "ref_data_base":  "/kb/data",
+            "ref_data_base": os.environ.get("KB_REF_DATA", "/kb/data"),
             "auth-service-url-allow-insecure": True,
             "scratch": "/kb/module/work/tmp",
             "user": "mrbogus",
@@ -80,10 +80,7 @@ class MethodRunnerTest(unittest.TestCase):
         mr = MethodRunner(self.cfg, "1234", logger=MockLogger())
         module_info = deepcopy(CATALOG_GET_MODULE_VERSION)
         module_info["docker_img_name"] = "mock_app:latest"
-        try:
-            os.makedirs("/tmp/mr/")
-        except:
-            pass
+        os.makedirs("/tmp/mr/", exist_ok=True)
         q = Queue()
         action = mr.run(self.conf, module_info, EE2_JOB_PARAMS, "1234", fin_q=q)
         self.assertIn("name", action)
@@ -95,10 +92,7 @@ class MethodRunnerTest(unittest.TestCase):
         mr = MethodRunner(self.cfg, "1234", logger=MockLogger())
         module_info = deepcopy(CATALOG_GET_MODULE_VERSION)
         module_info["docker_img_name"] = "mock_app:latest"
-        try:
-            os.makedirs("/tmp/mr/")
-        except:
-            pass
+        os.makedirs("/tmp/mr/", exist_ok=True)
         if os.path.exists("/tmp/mr/workdir/output.json"):
             os.remove("/tmp/mr/workdir/output.json")
         q = Queue()
@@ -117,10 +111,7 @@ class MethodRunnerTest(unittest.TestCase):
         mr = MethodRunner(self.cfg, "1234", logger=MockLogger())
         module_info = deepcopy(CATALOG_GET_MODULE_VERSION)
         module_info["docker_img_name"] = "mock_app:latest"
-        try:
-            os.makedirs("/tmp/mr/")
-        except:
-            pass
+        os.makedirs("/tmp/mr/", exist_ok=True)
         if os.path.exists("/tmp/mr/workdir/output.json"):
             os.remove("/tmp/mr/workdir/output.json")
         q = Queue()
@@ -141,10 +132,7 @@ class MethodRunnerTest(unittest.TestCase):
         module_info = deepcopy(CATALOG_GET_MODULE_VERSION)
         module_info["docker_img_name"] = "mock_app:latest"
         module_info["secure_config_params"] = CATALOG_GET_SECURE_CONFIG_PARAMS
-        try:
-            os.makedirs("/tmp/mr/")
-        except:
-            pass
+        os.makedirs("/tmp/mr/", exist_ok=True)
         if os.path.exists("/tmp/mr/workdir/output.json"):
             os.remove("/tmp/mr/workdir/output.json")
         q = Queue()
@@ -152,17 +140,14 @@ class MethodRunnerTest(unittest.TestCase):
         params["method"] = "echo_test.bogus"
         mockrunner = MockRunner()
         mr.runner = mockrunner
-        action = mr.run(self.conf, module_info, params, "1234", fin_q=q)
+        mr.run(self.conf, module_info, params, "1234", fin_q=q)
         self.assertIn("KBASE_SECURE_CONFIG_PARAM_param1", mockrunner.env)
 
     def test_bad_method(self):
         mr = MethodRunner(self.cfg, "1234", logger=MockLogger())
         module_info = deepcopy(CATALOG_GET_MODULE_VERSION)
         module_info["docker_img_name"] = "mock_app:latest"
-        try:
-            os.makedirs("/tmp/mr/")
-        except:
-            pass
+        os.makedirs("/tmp/mr/", exist_ok=True)
         if os.path.exists("/tmp/mr/workdir/output.json"):
             os.remove("/tmp/mr/workdir/output.json")
         q = Queue()
