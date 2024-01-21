@@ -12,6 +12,11 @@ test/runtester.ready:
 mock:
 	docker build -t mock_app ./test/mock_app
 
+testimage:
+	docker pull kbase/runtester
+	docker tag kbase/runtester test/runtester
+
+
 test:
 	nosetests -A "not online" -s -x -v --with-coverage --cover-package=JobRunner --cover-erase --cover-html --cover-html-dir=./test_coverage --nocapture  --nologcapture .
 
