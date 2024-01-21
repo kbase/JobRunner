@@ -1,6 +1,11 @@
+import os
+
+
 _IMAGE = "dockerhub-prod.kbase.us/kbase:rast_sdk."
 _IMAGE += "50b012d9b41b71ba31b30355627cf85f2611bc3e"
 _BASE = u"https://ci.kbase.us/services/"
+
+ref_data = os.environ.get("KB_REF_DATA", "/kb/data")
 
 CATALOG_GET_MODULE_VERSION = {
     "registration_id": "1553870236585_bab74ed6-4699-47b5-b865-d7130b90f542",
@@ -58,8 +63,8 @@ EE2_LIST_CONFIG = {
     u"ee.server.version": u"0.2.11",
     u"handle-url": _BASE + u"handle_service",
     u"kbase-endpoint": u"https://ci.kbase.us/services",
-    u"ref.data.base": u"/kb/data",
-    u"ref_data_base": u"/kb/data",
+    u"ref.data.base": ref_data,
+    u"ref_data_base": ref_data,
     u"external-url": _BASE + u"ee2",
     u"shock-url": _BASE + u"shock-api",
     u"srv.wiz.url": _BASE + u"service_wizard",
