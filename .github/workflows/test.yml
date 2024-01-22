@@ -1,0 +1,65 @@
+name: KBase JobRunner tests
+
+on:
+  pull_request:
+    types:
+    - opened
+    - reopened
+    - synchronize
+    - ready_for_review
+  push:
+    # run workflow when merging to main or develop
+    branches:
+      - main
+      - master
+      - develop
+      - scanon/gha
+
+jobs:
+
+  jobsrunner_tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.9"]
+
+    steps:
+    - name: Install Docker
+      uses: docker-practice/actions-setup-docker@master
+      timeout-minutes: 12
+    
+    - name: Repo checkout
+      uses: actions/checkout@v3
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install dependecies
+      # tried VaultVulp/action-pipenv but pytest wasn't on the path post action
+      shell: bash
+      run: |
+        pip install -r requirements.txt
+        pip install -r requirements-dev.txt
+        pip freeze
+        make mock
+        docker pull kbase/runtester
+        docker tag kbase/runtester test/runtester
+        curl -q -L -o $HOME/cromwell-44.jar https://github.com/broadinstitute/cromwell/releases/download/44/cromwell-44.jar
+        touch ~/cromwell.conf
+        ulimit -a
+     
+
+    - name: Run tests
+      shell: bash
+      env:
+          KB_AUTH_TOKEN: ${{ secrets.KBASE_CI_TOKEN  }}
+          KB_ADMIN_AUTH_TOKEN: ${{ secrets.KBASE_CI_TOKEN  }}
+          KB_BASE_URL: https://ci.kbase.us/services
+      run: make test
+
+#    - name: Upload coverage to Codecov
+#      uses: codecov/codecov-action@v3
+#      with:
+#        fail_ci_if_error: true
