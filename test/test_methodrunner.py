@@ -74,7 +74,7 @@ class MethodRunnerTest(unittest.TestCase):
             "auth-service-url-v2": base,
             "external-url": base,
             "srv-wiz-url": base,
-            "ref_data_base":  "/kb/data",
+            "ref_data_base": os.environ.get("KB_REF_DATA", "/kb/data"),
             "auth-service-url-allow-insecure": True,
             "scratch": "/kb/module/work/tmp",
             "user": "mrbogus",
@@ -84,6 +84,7 @@ class MethodRunnerTest(unittest.TestCase):
         mr = MethodRunner(self.cfg, logger=MockLogger())
         module_info = deepcopy(CATALOG_GET_MODULE_VERSION)
         module_info["docker_img_name"] = "mock_app:latest"
+        os.makedirs("/tmp/mr/", exist_ok=True)
         q = Queue()
         action = mr.run(self.conf, module_info, EE2_JOB_PARAMS, self.job_id, fin_q=q)
         self.assertIn("name", action)
