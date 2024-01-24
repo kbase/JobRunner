@@ -33,12 +33,12 @@ def _get_admin_token():
 
 class Config():
     def __init__(self, workdir=None, base_url=None, job_id=None, use_ee2=True):
-       self.job_id = job_id
-       self.base_url = "https://ci.kbase.us/services/"
-       self.ee2_url = None
-       self.debug = False
-       self.cgroup = None
-       self.user = None
+        self.job_id = job_id
+        self.base_url = "https://ci.kbase.us/services/"
+        self.ee2_url = None
+        self.debug = False
+        self.cgroup = None
+        self.user = None
 
         self.workdir = workdir if workdir else os.getcwd()
         os.makedirs(self.workdir, exist_ok=True)

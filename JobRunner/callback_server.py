@@ -11,7 +11,7 @@ from sanic.response import json
 
 Config.SANIC_REQUEST_TIMEOUT = 300
 
-app = Sanic()
+app = Sanic(__name__)
 outputs = dict()
 prov = []
 
