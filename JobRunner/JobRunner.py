@@ -414,7 +414,7 @@ class JobRunner(object):
         #       in the module being tested.
         config = {
             'kbase-endpoint': base,
-            'external-url': f"{base}/ee2",
+            'external-url': f"{base}ee2",
             'shock-url': f"{base}shock-api",
             'handle-url': f"{base}handle_service",
             'srv-wiz-url': f"{base}service_wizard",
