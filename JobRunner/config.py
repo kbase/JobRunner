@@ -31,7 +31,7 @@ def _get_admin_token():
     return admin_token
 
 
-class Config():
+class Config:
     def __init__(self, workdir=None, base_url=None, job_id=None, use_ee2=True):
         self.job_id = job_id
         self.base_url = "https://ci.kbase.us/services/"
