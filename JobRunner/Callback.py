@@ -24,7 +24,7 @@ class Callback():
                 raise ValueError(f"Provenance file is missing {kn}")
         params = job_params['params']
         if not isinstance(params, list):
-            raise ValueError("params in Provenenace file isn't a list")
+            raise ValueError("params in Provenance file isn't a list")
         return job_params
 
     def run(self):
