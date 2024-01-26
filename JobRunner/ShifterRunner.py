@@ -29,10 +29,10 @@ class ShifterRunner:
                     error = 1
                 else:
                     error = 0
-                l = f.readline().decode('utf-8')
-                if len(l) > 0:
+                line = f.readline().decode('utf-8')
+                if len(line) > 0:
                     try:
-                        self.logger.log_lines([{'line': l, 'is_error': error}])
+                        self.logger.log_lines([{'line': line, 'is_error': error}])
                     except Exception as e:
                         print(e)
                         continue
@@ -69,7 +69,7 @@ class ShifterRunner:
             ]
         # TODO: Do somehting with the labels
         for hd in vols.keys():
-           cmd.extend(['--volume', '%s:%s' % (hd, vols[hd]['bind'])])
+            cmd.extend(['--volume', '%s:%s' % (hd, vols[hd]['bind'])])
         newenv = os.environ
         for e in env.keys():
             newenv[e] = env[e]

@@ -11,11 +11,9 @@ from time import sleep as _sleep
 
 
 class Logger(object):
-    def __init__(self, ee2_url: str, job_id: str, ee2: execution_engine2 = None):
-        self.ee2_url = ee2_url
+    def __init__(self, job_id: str,
+                 ee2: execution_engine2 = None):
         self.ee2 = ee2
-        if self.ee2 is None:
-            self.ee2 = execution_engine2(self.ee2_url)
 
         self.job_id = job_id
         self.debug = os.environ.get("DEBUG_RUNNER", None)
@@ -31,12 +29,14 @@ class Logger(object):
         :return:
         """
         try:
-            self.ee2.add_job_logs({"job_id": self.job_id}, lines)
+            if self.ee2:
+                self.ee2.add_job_logs({"job_id": self.job_id}, lines)
         except Exception:
             if self.logging_retry:
                 _sleep(1)
                 self.logging_retry_attempts -= 1
-                self.ee2.add_job_logs({"job_id": self.job_id}, lines)
+                if self.ee2:
+                    self.ee2.add_job_logs({"job_id": self.job_id}, lines)
                 if self.logging_retry_attempts == 0:
                     self.logging_retry = False
 
