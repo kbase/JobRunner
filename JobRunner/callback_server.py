@@ -11,15 +11,6 @@ import uvicorn
 
 app = FastAPI()
 
-
-#from sanic import Sanic
-#from sanic.exceptions import abort
-#from sanic.log import logger
-#from sanic.response import json
-
-
-#Config.SANIC_REQUEST_TIMEOUT = 300
-
 outputs = dict()
 prov = []
 token = None

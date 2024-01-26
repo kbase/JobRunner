@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 import os
 import unittest
-from unittest.mock import patch
 from copy import deepcopy
 from queue import Queue
+from pathlib import Path
 
 from JobRunner.MethodRunner import MethodRunner
-from JobRunner.logger import Logger
+from JobRunner.config import Config
 from .mock_data import (
     EE2_JOB_PARAMS,
     CATALOG_GET_MODULE_VERSION,
@@ -53,18 +53,11 @@ class MethodRunnerTest(unittest.TestCase):
         # WARNING: don't call any logging metholsds on the context object,
         # it'll result in a NoneType error
         cls.workdir = os.environ.get("JOB_DIR", "/tmp")
-        try:
-            os.makedirs("/tmp/mr/")
-        except:
-            pass
-        cls.cfg = {
-            "catalog-service-url": "http://localhost",
-            "token": cls.token,
-            "admin_token": os.environ.get("KB_ADMIN_AUTH_TOKEN"),
-            "workdir": cls.workdir
-        }
+        os.makedirs("/tmp/mr/", exist_ok=True)
+        cls.job_id = "1234"
+        cls.cfg = Config(workdir=cls.workdir, job_id=cls.job_id)
         cls.logger = MockLogger()
-        cls.mr = MethodRunner(cls.cfg, "1234", logger=cls.logger)
+        cls.mr = MethodRunner(cls.cfg, logger=cls.logger)
         base = "https://ci.kbase.us/services/"
         cls.conf = {
             "kbase-endpoint": base,
@@ -74,96 +67,93 @@ class MethodRunnerTest(unittest.TestCase):
             "auth-service-url": base,
             "auth-service-url-v2": base,
             "external-url": base,
-            "srv-wiz-url" : base,
-            "ref_data_base":  "/kb/data",
+            "srv-wiz-url": base,
+            "ref_data_base": os.environ.get("KB_REF_DATA", "/kb/data"),
             "auth-service-url-allow-insecure": True,
             "scratch": "/kb/module/work/tmp",
             "user": "mrbogus",
         }
 
     def test_run(self):
-        mr = MethodRunner(self.cfg, "1234", logger=MockLogger())
+        mr = MethodRunner(self.cfg, logger=MockLogger())
         module_info = deepcopy(CATALOG_GET_MODULE_VERSION)
         module_info["docker_img_name"] = "mock_app:latest"
+        os.makedirs("/tmp/mr/", exist_ok=True)
         q = Queue()
-        action = mr.run(self.conf, module_info, EE2_JOB_PARAMS, "1234", fin_q=q)
+        action = mr.run(self.conf, module_info, EE2_JOB_PARAMS, self.job_id, fin_q=q)
         self.assertIn("name", action)
         out = q.get(timeout=10)
         self.assertEqual(out[0], "finished")
-        self.assertEqual("1234", out[1])
+        self.assertEqual(self.job_id, out[1])
 
     def test_no_output(self):
-        mr = MethodRunner(self.cfg, "1234", logger=MockLogger())
+        mr = MethodRunner(self.cfg, logger=MockLogger())
         module_info = deepcopy(CATALOG_GET_MODULE_VERSION)
         module_info["docker_img_name"] = "mock_app:latest"
-        if os.path.exists(f"{self.workdir}/workdir/output.json"):
-            os.remove(f"{self.workdir}/workdir/output.json")
+        Path(f"{self.workdir}/workdir/output.json").unlink(missing_ok=True)
         q = Queue()
         params = deepcopy(EE2_JOB_PARAMS)
         params["method"] = "echo_test.noout"
-        action = mr.run(self.conf, module_info, params, "1234", fin_q=q)
+        action = mr.run(self.conf, module_info, params, self.job_id, fin_q=q)
         self.assertIn("name", action)
         out = q.get(timeout=10)
         self.assertEqual(out[0], "finished")
-        self.assertEqual("1234", out[1])
-        result = mr.get_output("1234", subjob=False)
+        self.assertEqual(self.job_id, out[1])
+        result = mr.get_output(self.job_id, subjob=False)
         self.assertIn("error", result)
         self.assertEquals(result["error"]["name"], "Output not found")
 
     def test_too_much_output(self):
-        mr = MethodRunner(self.cfg, "1234", logger=MockLogger())
+        mr = MethodRunner(self.cfg, logger=MockLogger())
         module_info = deepcopy(CATALOG_GET_MODULE_VERSION)
         module_info["docker_img_name"] = "mock_app:latest"
-        if os.path.exists(f"{self.workdir}/workdir/output.json"):
-            os.remove(f"{self.workdir}/workdir/output.json")
+        Path(f"{self.workdir}/workdir/output.json").unlink(missing_ok=True)
         q = Queue()
         params = deepcopy(EE2_JOB_PARAMS)
         params["method"] = "echo_test.bogus"
-        action = mr.run(self.conf, module_info, params, "1234", fin_q=q)
+        action = mr.run(self.conf, module_info, params, self.job_id, fin_q=q)
         self.assertIn("name", action)
         out = q.get(timeout=10)
         self.assertEqual(out[0], "finished")
-        self.assertEqual("1234", out[1])
-        result = mr.get_output("1234", subjob=False, max_size=10)
+        self.assertEqual(self.job_id, out[1])
+        result = mr.get_output(self.job_id, subjob=False, max_size=10)
         self.assertIn("error", result)
         err = "Too much output from a method"
         self.assertEquals(result["error"]["name"], err)
 
     def test_secure_params(self):
-        mr = MethodRunner(self.cfg, "1234", logger=MockLogger())
+        mr = MethodRunner(self.cfg, logger=MockLogger())
         module_info = deepcopy(CATALOG_GET_MODULE_VERSION)
         module_info["docker_img_name"] = "mock_app:latest"
         module_info["secure_config_params"] = CATALOG_GET_SECURE_CONFIG_PARAMS
-        if os.path.exists(f"{self.workdir}/workdir/output.json"):
-            os.remove(f"{self.workdir}/workdir/output.json")
+        Path(f"{self.workdir}/workdir/output.json").unlink(missing_ok=True)
         q = Queue()
         params = deepcopy(EE2_JOB_PARAMS)
         params["method"] = "echo_test.bogus"
         mockrunner = MockRunner()
         mr.runner = mockrunner
-        action = mr.run(self.conf, module_info, params, "1234", fin_q=q)
+        mr.run(self.conf, module_info, params, self.job_id, fin_q=q)
         self.assertIn("KBASE_SECURE_CONFIG_PARAM_param1", mockrunner.env)
 
     def test_bad_method(self):
-        mr = MethodRunner(self.cfg, "1234", logger=MockLogger())
+        mr = MethodRunner(self.cfg, logger=MockLogger())
         module_info = deepcopy(CATALOG_GET_MODULE_VERSION)
         module_info["docker_img_name"] = "mock_app:latest"
-        if os.path.exists(f"{self.workdir}/workdir/output.json"):
-            os.remove(f"{self.workdir}/workdir/output.json")
+        Path(f"{self.workdir}/workdir/output.json").unlink(missing_ok=True)
         q = Queue()
         params = deepcopy(EE2_JOB_PARAMS)
         params["method"] = "echo_test.badmethod"
-        action = mr.run(self.conf, module_info, params, "1234", fin_q=q)
+        action = mr.run(self.conf, module_info, params, self.job_id, fin_q=q)
         self.assertIn("name", action)
         out = q.get(timeout=10)
         self.assertEqual(out[0], "finished")
-        self.assertEqual("1234", out[1])
-        result = mr.get_output("1234", subjob=False)
+        self.assertEqual(self.job_id, out[1])
+        result = mr.get_output(self.job_id, subjob=False)
         self.assertIn("error", result)
         self.assertEquals(result["error"]["name"], "Method not found")
 
     def test_bad_runtime(self):
         cfg = deepcopy(self.cfg)
-        cfg["runtime"] = "bogus"
+        cfg.runtime = "bogus"
         with self.assertRaises(OSError):
-            MethodRunner(cfg, "1234", logger=MockLogger())
+            MethodRunner(cfg, logger=MockLogger())

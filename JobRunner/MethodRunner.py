@@ -21,25 +21,24 @@ class MethodRunner:
     and returning output via a queue.
     """
 
-    def __init__(self, config, job_id, logger=None, debug=False):
+    def __init__(self, config, logger=None, debug=False):
         """
         Inputs: config dictionary, Job ID, and optional logger
         """
         self.config = config
-        self.job_id = job_id
+        self.job_id = config.job_id
         self.logger = logger
-        self.token = config["token"]
-        self.cgroup = config.get("cgroup")
-        self.workdir = config.get("workdir", "/mnt/awe/condor")
+        self.token = config.token
+        self.workdir = config.workdir
         # self.basedir = os.path.join(self.workdir, 'job_%s' % (self.job_id))
 
         self.job_dir = os.path.join(self.workdir, "workdir")
-        self.hostname = config.get("hostname")
-        self.ee2_endpoint = config.get("ee2_url")
+        self.hostname = config.hostname
+        self.ee2_endpoint = config.ee2_url
         self.debug = debug
 
         logging.info(f"Job dir is {self.job_dir}")
-        runtime = config.get("runtime", "docker")
+        runtime = config.runtime
         self.containers = []
         self.runtime = runtime
         if runtime == "shifter":
@@ -140,7 +139,7 @@ class MethodRunner:
         job/process exits.
         """
         # Mkdir workdir/tmp
-        cgroup = config.get("cgroup")
+        cgroup = self.config.cgroup
         job_dir = self._get_job_dir(job_id, subjob=subjob)
         if not os.path.exists(job_dir):
             os.mkdir(job_dir)
@@ -171,7 +170,7 @@ class MethodRunner:
         if "volume_mounts" in config:
             for v in config["volume_mounts"]:
                 k = v["host_dir"]
-                k = k.replace("${username}", config["user"])
+                k = k.replace("${username}", self.config.user)
                 if not os.path.exists(k):
                     estr = "Volume mount ({}) doesn't exist.".format(k)
                     self.logger.error(estr)

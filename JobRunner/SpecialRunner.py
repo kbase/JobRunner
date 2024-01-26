@@ -19,8 +19,8 @@ class SpecialRunner:
         self.config = config
         self.top_job_id = job_id
         self.logger = logger
-        self.token = config["token"]
-        self.workdir = config.get("workdir", "/mnt/awe/condor")
+        self.token = config.token
+        self.workdir = config.workdir
         self.shareddir = os.path.join(self.workdir, "workdir/tmp")
         self.containers = []
         self.threads = []
