@@ -1,4 +1,4 @@
-sanic==21.12.2
+sanic==23.12.1
 docker==7.0.0
 websockets==10.0
 requests==2.31.0
