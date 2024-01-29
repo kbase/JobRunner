@@ -42,6 +42,7 @@ jobs:
       run: |
         pip install -r requirements.txt
         pip install -r requirements-dev.txt
+        pip install mock-server
         make mock
         docker pull kbase/runtester
         docker tag kbase/runtester test/runtester
@@ -55,6 +56,10 @@ jobs:
         export KB_AUTH_TOKEN=bogus
         export KB_ADMIN_AUTH_TOKEN=bogus
         export KB_BASE_URL=https://ci.kbase.us/services
+        IP=$(ip route get 8.8.8.8 | head -1 |cut -d' ' -f7)
+        echo $IP
+        export TEST_URL="$IP:8888"
+        mock-server --dir=./test/mock-server --address=0.0.0.0 &
         make test
 
     - name: Failure logs

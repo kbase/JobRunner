@@ -1,0 +1,28 @@
+{
+  "version": "1.1",
+  "result": [
+    {
+      "registration_id": "1529602194173_fab31f45-9465-4e59-b65d-89040a54396f",
+      "released": 1,
+      "timestamp": 1529602194173,
+      "notes": "",
+      "docker_img_name": "dockerhub-ci.kbase.us/kbase:echo_test.4b5a37e6fed857c199df65191ba3344a467b8aa",
+      "git_commit_hash": "4b5a37e6fed857c199df65191ba3344a467b8aab",
+      "version": "0.0.1",
+      "narrative_methods": [
+        "example_method"
+      ],
+      "released_timestamp": null,
+      "module_name": "echo_test",
+      "dynamic_service": 0,
+      "local_functions": [],
+      "git_commit_message": "Add the message in the return dict",
+      "release_timestamp": 1665086800987,
+      "git_url": "https://github.com/jayrbolton/kb_echo_test",
+      "release_tags": [
+        "release"
+      ]
+    }
+  ],
+  "id": "24087040852079133"
+}

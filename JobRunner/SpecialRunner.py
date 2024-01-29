@@ -3,6 +3,8 @@ from threading import Thread
 from subprocess import Popen, PIPE
 from time import sleep, time
 from select import select
+import sys
+import logging
 
 
 class SpecialRunner:
@@ -135,14 +137,21 @@ class SpecialRunner:
         submit = "%s_submit" % (stype)
         if "submit_script" not in params:
             raise ValueError("Missing submit script")
-        os.chdir(self.shareddir)
-        scr = params["submit_script"]
+        scr = os.path.join(self.shareddir, params["submit_script"])
         if not os.path.exists(scr):
             raise OSError("Submit script not found at %s" % (scr))
-        outfile = "%s.out" % (job_id)
-        errfile = "%s.err" % (job_id)
+        outfile = f"{self.shareddir}{job_id}.out"
+        errfile = f"{self.shareddir}{job_id}.err"
         cmd = [submit, scr, outfile, errfile]
-        proc = Popen(cmd, stdout=PIPE, stderr=PIPE)
+        logging.info(f"Submitting: {cmd}")
+        try:
+            proc = Popen(cmd, cwd=self.shareddir, stdout=PIPE, stderr=PIPE)
+        except Exception as e:
+            for q in fin_q:
+                q.put(["finished_special", job_id, {}])
+            sys.stderr.write(str(e))
+            return None
+
         stdout, stderr = proc.communicate()
         slurm_jobid = stdout.decode("utf-8").rstrip()
         out = Thread(
@@ -191,16 +200,15 @@ class SpecialRunner:
             raise ValueError("Missing workflow script")
         if "inputs" not in params:
             raise ValueError("Missing inputs")
-        os.chdir(self.shareddir)
-        wdl = params["workflow"]
+        wdl = os.path.join(self.shareddir, params["workflow"])
         if not os.path.exists(wdl):
             raise OSError("Workflow script not found at %s" % (wdl))
 
-        inputs = params["inputs"]
+        inputs = os.path.join(self.shareddir, params["inputs"])
         if not os.path.exists(inputs):
             raise OSError("Inputs file not found at %s" % (inputs))
         cmd = ["wdl_run", inputs, wdl]
-        proc = Popen(cmd, bufsize=0, stdout=PIPE, stderr=PIPE)
+        proc = Popen(cmd, cwd=self.shareddir, bufsize=0, stdout=PIPE, stderr=PIPE)
         out = Thread(target=self._readio, args=[proc, job_id, queues])
         self.threads.append(out)
         out.start()

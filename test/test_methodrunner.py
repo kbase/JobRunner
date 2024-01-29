@@ -65,6 +65,7 @@ class MethodRunnerTest(unittest.TestCase):
         cls.logger = MockLogger()
         cls.mr = MethodRunner(cls.cfg, logger=cls.logger)
         base = "https://ci.kbase.us/services/"
+        refdata = os.environ.get("KB_REF_DATA", "/kb/data")
         cls.conf = {
             "kbase-endpoint": base,
             "workspace-url": base,
@@ -74,7 +75,7 @@ class MethodRunnerTest(unittest.TestCase):
             "auth-service-url-v2": base,
             "external-url": base,
             "srv-wiz-url": base,
-            "ref_data_base":  "/kb/data",
+            "ref_data_base":  refdata,
             "auth-service-url-allow-insecure": True,
             "scratch": "/kb/module/work/tmp",
             "user": "mrbogus",
@@ -106,7 +107,7 @@ class MethodRunnerTest(unittest.TestCase):
         self.assertEqual(self.job_id, out[1])
         result = mr.get_output(self.job_id, subjob=False)
         self.assertIn("error", result)
-        self.assertEquals(result["error"]["name"], "Output not found")
+        self.assertEqual(result["error"]["name"], "Output not found")
 
     def test_too_much_output(self):
         mr = MethodRunner(self.cfg, logger=MockLogger())
@@ -124,7 +125,7 @@ class MethodRunnerTest(unittest.TestCase):
         result = mr.get_output(self.job_id, subjob=False, max_size=10)
         self.assertIn("error", result)
         err = "Too much output from a method"
-        self.assertEquals(result["error"]["name"], err)
+        self.assertEqual(result["error"]["name"], err)
 
     def test_secure_params(self):
         mr = MethodRunner(self.cfg, logger=MockLogger())
@@ -155,7 +156,7 @@ class MethodRunnerTest(unittest.TestCase):
         self.assertEqual(self.job_id, out[1])
         result = mr.get_output(self.job_id, subjob=False)
         self.assertIn("error", result)
-        self.assertEquals(result["error"]["name"], "Method not found")
+        self.assertEqual(result["error"]["name"], "Method not found")
 
     def test_bad_runtime(self):
         cfg = deepcopy(self.cfg)

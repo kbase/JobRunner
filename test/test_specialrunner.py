@@ -36,6 +36,10 @@ class SpecialRunnerTest(unittest.TestCase):
         cls.logger = MockLogger()
         cls.config = Config(workdir="/tmp")
         cls.sr = SpecialRunner(cls.config, "123", logger=cls.logger)
+        test_dir = os.path.dirname(os.path.abspath(__file__))
+        bin_dir = os.path.join(test_dir, "bin")
+        scripts_dir = os.path.join(test_dir, "../scripts/")
+        os.environ["PATH"] = ":".join([bin_dir, scripts_dir, os.environ["PATH"]])
 
     _wdl = """
     task hello_world {
@@ -77,8 +81,8 @@ class SpecialRunnerTest(unittest.TestCase):
         self.sr._BATCH_POLL = 0.3
         self.sr.run(config, data, job_id, fin_q=[q])
         result = q.get(timeout=10)
-        self.assertEquals(result[0], "finished_special")
-        self.assertEquals(len(result), 3)
+        self.assertEqual(result[0], "finished_special")
+        self.assertEqual(len(result), 3)
         self.assertIn(["line1\n", 0], self.logger.all)
         self.assertIn(["line2\n", 1], self.logger.all)
         self.assertIn(["line3\n", 0], self.logger.all)
@@ -102,8 +106,8 @@ class SpecialRunnerTest(unittest.TestCase):
         self.sr._BATCH_POLL = 0.3
         self.sr.run(config, data, job_id, fin_q=[q])
         result = q.get(timeout=60)
-        self.assertEquals(result[0], "finished_special")
-        self.assertEquals(len(result), 3)
+        self.assertEqual(result[0], "finished_special")
+        self.assertEqual(len(result), 3)
         output = self.logger.all
         count = False
         for line in output:
