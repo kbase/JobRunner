@@ -4,7 +4,7 @@ import os
 from queue import Empty
 import logging
 from typing import Annotated, Union
-from fastapi import FastAPI, Header
+from fastapi import FastAPI, Header, HTTPException
 from pydantic import BaseModel
 import uvicorn
 
@@ -17,10 +17,6 @@ token = None
 bypass_token = False
 in_q = None
 out_q = None
-
-
-def abort():
-    print("TODO")
 
 
 def config(conf):
@@ -50,7 +46,8 @@ def start_callback_server(ip, port, out_queue, in_queue, token, bypass_token):
     if os.environ.get("IN_CONTAINER"):
         ip = "0.0.0.0"
     #app.run(host=ip, port=port, debug=False, access_log=False)
-    uvconfig = uvicorn.Config("JobRunner.callback_server:app", host=ip, port=port, log_level="info")
+    uvconfig = uvicorn.Config("JobRunner.callback_server:app", host=ip, port=port,
+                              access_log=False, log_level="warning")
     server = uvicorn.Server(uvconfig)
     server.run()
 
@@ -58,6 +55,11 @@ def start_callback_server(ip, port, out_queue, in_queue, token, bypass_token):
 
 class RPC(BaseModel):
     method: str
+
+
+@app.get("/")
+async def root():
+    return {"ready": True}
 
 
 @app.post("/")
@@ -75,7 +77,6 @@ async def root(data: dict, Authorization: Annotated[Union[str, None], Header()] 
 def _check_finished(info=None):
     global prov
     global in_q
-    logging.debug(info)
     try:
         # Flush the queue
         while True:
@@ -94,7 +95,7 @@ def _check_rpc_token(req_token):
         if bypass_token:
             pass
         else:
-            abort(401)
+            raise HTTPException(status_code=401, detail="Bad token")
 
 
 def _handle_provenance():
@@ -113,7 +114,7 @@ def _handle_submit(module, method, data, token):
 
 def _handle_checkjob(data):
     if "params" not in data:
-        abort(404)
+        raise HTTPException(status_code=404, detail="Missing params")
     job_id = data["params"][0]
     _check_finished(f"Checkjob for {job_id}")
     resp = {"finished": 0}

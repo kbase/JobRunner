@@ -30,6 +30,10 @@ class JobRunner(object):
     on a container runtime.  It handles starting the callback service
     to support subjobs and provenenace calls.
     """
+    max_retries = 10
+    poll_sleep = 0.2
+    canceled_sleep = 5
+    retry_sleep = 30
 
     def __init__(self, config: Config, port=None):
         """
@@ -222,7 +226,7 @@ class JobRunner(object):
             if not self._check_job_status():
                 self.logger.error("Job canceled or unexpected error")
                 self._cancel()
-                _sleep(5)
+                _sleep(self.canceled_sleep)
                 return {"error": "Canceled or unexpected error"}
 
     def _init_callback_url(self, port=None):
@@ -287,7 +291,8 @@ class JobRunner(object):
             if self.ee2:
                 self.ee2.finish_job(finish_job_params)
         except Exception:
-            _sleep(30)
+            logging.warn(f"Waiting for completion: {self.retry_sleep}s")
+            _sleep(self.retry_sleep)
             if self.ee2:
                 self.ee2.finish_job(finish_job_params)
 
@@ -368,6 +373,17 @@ class JobRunner(object):
         ]
         self.cbs = Process(target=start_callback_server, args=cb_args)
         self.cbs.start()
+        ct = 0
+        while ct < self.max_retries:
+            try:
+                resp = requests.get(self.callback_url)
+                break
+            except requests.exceptions.ConnectionError:
+                logging.info("Waiting for Callback")
+                ct += 1
+                _sleep(self.poll_sleep)
+        else:
+            logging.warn("Callback server not responding")
 
         # Submit the main job
         self.logger.log(f"Job is about to run {job_params.get('app_id')}")
@@ -454,3 +470,4 @@ class JobRunner(object):
         self.cbs = Process(target=start_callback_server, args=cb_args)
         self.cbs.start()
         self._watch(config)
+        self.cbs.terminate() 
