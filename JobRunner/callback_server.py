@@ -32,7 +32,7 @@ def start_callback_server(ip, port, out_queue, in_queue, token, bypass_token):
     app.config.update(conf)
     if os.environ.get("IN_CONTAINER"):
         ip = "0.0.0.0"
-    app.run(host=ip, port=port, debug=False, access_log=False)
+    app.run(host=ip, port=port, debug=False, access_log=False, motd=False)
 
 
 @app.route("/", methods=["GET", "POST"])

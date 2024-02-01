@@ -18,7 +18,7 @@ testimage:
 
 
 test:
-	nosetests -A "not online" -s -x -v --with-coverage --cover-package=JobRunner --cover-erase --cover-html --cover-html-dir=./test_coverage --nocapture  --nologcapture .
+	nosetests -A "not online" -s -x -v --with-coverage --cover-package=JobRunner --cover-erase --cover-html --cover-html-dir=./test_coverage .
 
 
 clean:

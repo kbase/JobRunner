@@ -40,6 +40,6 @@ class ShifterRunnerTest(unittest.TestCase):
         app = "mock_app:latest"
         self.sr.run(app, app, env, vols, labels, [q])
         result = q.get()
-        self.assertEquals(result[0], "finished")
-        self.assertEquals(len(result), 3)
+        self.assertEqual(result[0], "finished")
+        self.assertEqual(len(result), 3)
         self.assertIn("line", self.logger.all[0])

@@ -107,7 +107,7 @@ class MethodRunnerTest(unittest.TestCase):
         self.assertEqual(self.job_id, out[1])
         result = mr.get_output(self.job_id, subjob=False)
         self.assertIn("error", result)
-        self.assertEquals(result["error"]["name"], "Output not found")
+        self.assertEqual(result["error"]["name"], "Output not found")
 
     def test_too_much_output(self):
         mr = MethodRunner(self.cfg, logger=MockLogger())
@@ -125,7 +125,7 @@ class MethodRunnerTest(unittest.TestCase):
         result = mr.get_output(self.job_id, subjob=False, max_size=10)
         self.assertIn("error", result)
         err = "Too much output from a method"
-        self.assertEquals(result["error"]["name"], err)
+        self.assertEqual(result["error"]["name"], err)
 
     def test_secure_params(self):
         mr = MethodRunner(self.cfg, logger=MockLogger())
@@ -156,7 +156,7 @@ class MethodRunnerTest(unittest.TestCase):
         self.assertEqual(self.job_id, out[1])
         result = mr.get_output(self.job_id, subjob=False)
         self.assertIn("error", result)
-        self.assertEquals(result["error"]["name"], "Method not found")
+        self.assertEqual(result["error"]["name"], "Method not found")
 
     def test_bad_runtime(self):
         cfg = deepcopy(self.cfg)
