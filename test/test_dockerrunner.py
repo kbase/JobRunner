@@ -76,20 +76,20 @@ class DockerRunnerTest(unittest.TestCase):
         serr = u"2019-07-08T23:21:32.508797700Z 3\n"
         serr += u"2019-07-08T23:21:32.508797600Z 2\n"
         lines = dr._sort_lines_by_time(sout.encode("utf-8"), serr.encode("utf-8"))
-        self.assertEquals(lines[0]["line"], "1")
-        self.assertEquals(lines[1]["line"], "2")
-        self.assertEquals(lines[2]["line"], "3")
-        self.assertEquals(lines[3]["line"], "4")
-        self.assertEquals(lines[1]["is_error"], 1)
+        self.assertEqual(lines[0]["line"], "1")
+        self.assertEqual(lines[1]["line"], "2")
+        self.assertEqual(lines[2]["line"], "3")
+        self.assertEqual(lines[3]["line"], "4")
+        self.assertEqual(lines[1]["is_error"], 1)
 
     def test_sort_empty(self):
         dr = DockerRunner()
         sout = u"2019-07-08T23:21:32.508696500Z \n"
         serr = u"2019-07-08T23:21:32.508797700Z \n"
         lines = dr._sort_lines_by_time(sout.encode("utf-8"), serr.encode("utf-8"))
-        self.assertEquals(lines[0]["line"], "")
-        self.assertEquals(lines[1]["line"], "")
-        self.assertEquals(lines[1]["is_error"], 1)
+        self.assertEqual(lines[0]["line"], "")
+        self.assertEqual(lines[1]["line"], "")
+        self.assertEqual(lines[1]["is_error"], 1)
 
     def test_exceptions(self):
         dr = DockerRunner()
@@ -102,4 +102,5 @@ class DockerRunnerTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             dr._shepherd(c, "1234", [q])
         result = q.get()
-        print(result)
+        expected = ['finished', '1234', None]
+        self.assertEqual(expected, result)

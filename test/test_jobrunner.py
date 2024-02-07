@@ -119,7 +119,7 @@ class JobRunnerTest(unittest.TestCase):
     @attr("offline")
     @patch("JobRunner.JobRunner.KBaseAuth", autospec=True)
     @patch("JobRunner.JobRunner.EE2", autospec=True)
-    def test_run(self, mock_ee2, mock_auth):
+    def test_run_mock_app(self, mock_ee2, mock_auth):
         self._cleanup(self.jobid)
         params = deepcopy(EE2_JOB_PARAMS)
         params["method"] = "mock_app.bogus"
@@ -297,7 +297,7 @@ class JobRunnerTest(unittest.TestCase):
         with self.assertRaises(ConnectionError):
             jr.run()
         emsg = "Failed to get job parameters. Exiting."
-        self.assertEquals(mlog.errors[0], emsg)
+        self.assertEqual(mlog.errors[0], emsg)
 
     @attr("offline")
     @patch("JobRunner.JobRunner.EE2", autospec=True)
@@ -349,6 +349,8 @@ class JobRunnerTest(unittest.TestCase):
     @patch("JobRunner.JobRunner.EE2", autospec=True)
     def test_special(self, mock_ee2, mock_auth):
         jr = JobRunner(self.config)
+        jr.sr._BATCH_POLL = 1
+        jr.sr._FILE_POLL = 1
         jr._get_cgroup = MagicMock(return_value=None)
         params = deepcopy(EE2_JOB_PARAMS)
         submitscript = os.path.join(self.workdir, "workdir/tmp", "submit.sl")
@@ -415,3 +417,25 @@ class JobRunnerTest(unittest.TestCase):
         jr._get_token_lifetime = MagicMock(return_value=self.future)
         out = jr.run()
         self.assertNotIn("error", out)
+
+    # Disabled for now
+    @patch("JobRunner.JobRunner.KBaseAuth", autospec=True)
+    def xtest_callback(self, mock_auth):
+        self._cleanup(self.jobid)
+        config = Config(job_id=self.jobid, workdir=self.workdir, use_ee2=False)
+
+        jr = JobRunner(config)
+        mlog = MockLogger()
+        jr.logger = mlog
+        jr.sr.logger = mlog
+        rv = deepcopy(CATALOG_GET_MODULE_VERSION)
+        rv["docker_img_name"] = "test/runtester:latest"
+        jr._get_cgroup = MagicMock(return_value=None)
+        jr.cc.catalog.get_module_version = MagicMock(return_value=rv)
+        jr.cc.catalog.list_volume_mounts = MagicMock(return_value=[])
+        jr.cc.catalog.get_secure_config_params = MagicMock(return_value=None)
+        jr.auth.get_user.return_value = "bogus"
+        jr._get_token_lifetime = MagicMock(return_value=self.future)
+        jr.jr_queue.put(["cancel", None, None])
+        jr.callback()
+

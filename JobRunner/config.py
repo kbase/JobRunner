@@ -5,7 +5,7 @@ from socket import gethostname
 
 _TOKEN_ENV = "KB_AUTH_TOKEN"
 _ADMIN_TOKEN_ENV = "KB_ADMIN_AUTH_TOKEN"
-_DEBUG = "DEBUG_MODE"
+_DEBUG_ENVNAME = "JOBRUNNER_DEBUG_MODE"
 
 
 def _get_token():
@@ -55,6 +55,6 @@ class Config:
         self.max_tasks = int(os.environ.get("JR_MAX_TASKS", "10"))
         self.token = _get_token()
         self.admin_token = _get_admin_token()
-        if _DEBUG in os.environ and os.environ[_DEBUG].lower() == "true":
+        if _DEBUG_ENVNAME in os.environ and os.environ[_DEBUG_ENVNAME].lower() == "true":
             self.debug = True
         self.hostname = gethostname()
