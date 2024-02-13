@@ -49,7 +49,6 @@ docker run --name cb -d \
    -e KB_AUTH_TOKEN \
    -e KB_ADMIN_AUTH_TOKEN \
    -e KB_BASE_URL=https://ci.kbase.us/services \
-   -e IN_CONTAINER=1 \
    -e CALLBACK_PORT=9999 \
    -e JOB_DIR \
    -v $JOB_DIR:$JOB_DIR \
