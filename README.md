@@ -16,9 +16,13 @@ the JobRunner is currently testing against Python 3.9.
 ```
 pip install .
 # Set the DOCKER_HOST if this doesn't work out of the box
+# Note the location of the socket file may vary based on
+# your container runtime installation.
 export DOCKER_HOST=unix://$HOME/.docker/run/docker.sock
 
 # Set job dir where work output will go
+# Note you may need to set the permissions to world writeable
+# depending on your container runtime installation.
 export JOB_DIR=/full/path/to/work/area
 
 # Set tokens and URL
