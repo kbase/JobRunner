@@ -29,7 +29,7 @@ export KB_BASE_URL=https://ci.kbase.us/services
 export KB_REF_DATA=/path/to/local/refdata
 
 # Launch the callback server
-python -m JobRunner.callback
+python -m JobRunner.Callback
 ```
 
 ### Container Launch
