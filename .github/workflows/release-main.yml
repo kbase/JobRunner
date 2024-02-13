@@ -20,6 +20,6 @@ jobs:
     needs: validate-release-tag
     uses: kbase/.github/.github/workflows/reusable_build-push.yml@main
     with:
-      name: '${{ github.event.repository.name }}'
+      name: jobrunner
       tags: '${{ github.event.release.tag_name }},latest'
     secrets: inherit
