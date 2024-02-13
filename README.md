@@ -89,6 +89,24 @@ make testimage
 make test
 ```
 
+## Using the CallBack Server 
+* Install a kb-sdk module such as DataFileUtil using `kb-sdk install` or copying from an existing apps `lib/installed_clients` directory
+* Point that client to the callback server's IP and PORT
+* The follow example points the DataFileUtil client to the callback server to launch a DataFileUtil container and download a specific object 
+
+```
+from DataFileUtilClient import DataFileUtil
+callback_url = 'http://127.0.0.1:9999'
+token='<redacted>'
+dfu = DataFileUtil(callback_url, service_ver='dev', token=token)
+
+ref = '68940/2/1'
+data = dfu.get_objects({
+            'object_refs': [ref]
+        })['data'][0]
+print(data)
+```
+
 ## Debug Mode
 
 A debug mode can be enabled by setting the environment variable "JOBRUNNER_DEBUG_MODE" to "TRUE".
