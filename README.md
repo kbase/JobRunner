@@ -10,7 +10,8 @@ The callback server can be launched in a few ways.
 
 ### Native Launch
 
-To launch the callback server natively you can do the following.
+To launch the callback server natively you can do the following. Note that
+the JobRunner is currently testing against Python 3.9.
 
 ```
 pip install .
