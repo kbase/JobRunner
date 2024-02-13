@@ -71,12 +71,13 @@ pip install -r requirements.txt -r requirements-dev.txt
 # Set the DOCKER_HOST if this doesn't work out of the box
 export DOCKER_HOST=unix://$HOME/.docker/run/docker.sock
 
-# Set tokens and URL
+# Be sure to set both tokens and the KB_BASE_URL
 export KB_AUTH_TOKEN="xxxxxxxxx"
 export KB_ADMIN_AUTH_TOKEN="xxxxxxxxxxxx"
 export KB_BASE_URL=https://ci.kbase.us/services
-
-# Set ref data to an area acceessible by Docker
+export CALLBACK_IP=127.0.0.1
+export CALLBACK_PORT=9999
+# Set ref data to an area accessible by Docker
 export KB_REF_DATA=/path/to/local/refdata
 
 make mock
