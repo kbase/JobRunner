@@ -120,7 +120,8 @@ will be disabled.  This makes it possible to analyze the logs and other informat
 
 ## Live editing
 * The JobRunner is deployed in ee2 in the /condor_shared directory
-* You can edit files in place without going through the entire development cycle. If you want to edit the DockerRunner.py you can extract it like so
+* You can download files from github using this script https://github.com/kbase/execution_engine2/blob/main/scripts/download_runner.sh
+* You can edit files in place without going through the entire development cycle and without pushing to github. For example, if you want to edit the DockerRunner.py you can extract it like so
 ```
 tar -zxvf JobRunner.tgz JobRunner/JobRunner/DockerRunner.py
 ```
