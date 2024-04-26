@@ -6,6 +6,7 @@ from socket import gethostname
 _TOKEN_ENV = "KB_AUTH_TOKEN"
 _ADMIN_TOKEN_ENV = "KB_ADMIN_AUTH_TOKEN"
 _DEBUG_ENVNAME = "JOBRUNNER_DEBUG_MODE"
+_KB_BASE_URL = "KB_BASE_URL"
 
 
 def _get_token():
@@ -34,7 +35,7 @@ def _get_admin_token():
 class Config:
     def __init__(self, workdir=None, base_url=None, job_id=None, use_ee2=True):
         self.job_id = job_id
-        self.base_url = "https://ci.kbase.us/services/"
+        self.base_url = os.environ.get(_KB_BASE_URL, "https://ci.kbase.us/services/")
         self.ee2_url = None
         self.debug = False
         self.cgroup = None
