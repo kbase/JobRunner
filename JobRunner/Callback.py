@@ -12,7 +12,9 @@ class Callback():
     def __init__(self):
         workdir = os.environ.get("JOB_DIR", '/tmp/')
         self.conf = Config(job_id="callback", workdir=workdir, use_ee2=False)
-        self.ip = os.environ.get('CALLBACK_IP', get_ip())
+        self.ip = os.environ.get('CALLBACK_IP')
+        if not self.ip:
+            self.ip = get_ip()
         self.port = os.environ.get('CALLBACK_PORT')
         self.cbs = None
         self.callback_url = None
