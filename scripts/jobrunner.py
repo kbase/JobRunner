@@ -151,7 +151,24 @@ def main():
 
     # WARNING: Condor job environment may not inherit from system ENV
     if "USE_SHIFTER" in os.environ:
+
         config["runtime"] = "shifter"
+
+        # Replace URLs for NERSC environment if set to "https://services.kbase.us"
+        new_url = "https://kbase.us"
+        old_url = "https://services.kbase.us"
+        
+        for key, value in os.environ.items():
+            if old_url in value:
+                os.environ[key] = value.replace(old_url, new_url)
+    
+        for key, value in config.items():
+            if isinstance(value, str) and old_url in value:
+                config[key] = value.replace(old_url, new_url)
+    
+        ee2_url = ee2_url.replace(old_url, new_url)
+            
+
 
     if "JR_MAX_TASKS" in os.environ:
         config["max_tasks"] = int(os.environ["JR_MAX_TASKS"])
