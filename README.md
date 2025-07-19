@@ -72,7 +72,7 @@ See the SDK guide for information about running test of SDK apps.
 Note that the
 [cromwell-44.jar](https://github.com/broadinstitute/cromwell/releases/download/44/cromwell-44.jar)
 file must exist in your `$HOME` directory, as well as a `cromwell.conf` file, which can be
-empty.
+empty. Java 8 is required to run Cromwell.
 
 Also note that there are `uv` `pyproject.toml` and `uv.lock` files provided for your
 comfort and convenience. They currently are not integrated into builds and must manually be kept
@@ -84,7 +84,7 @@ pip install -r requirements.txt -r requirements-dev.txt
 # Set the DOCKER_HOST if this doesn't work out of the box
 export DOCKER_HOST=unix://$HOME/.docker/run/docker.sock
 
-# Be sure to set both tokens and the KB_BASE_URL
+# Be sure to set both tokens and the KB_BASE_URL. Other variables are optional.
 export KB_AUTH_TOKEN="xxxxxxxxx"
 export KB_ADMIN_AUTH_TOKEN="xxxxxxxxxxxx"
 export KB_BASE_URL=https://ci.kbase.us/services
