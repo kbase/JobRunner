@@ -115,8 +115,6 @@ class MethodRunner:
         if not os.path.exists(wdt):
             os.mkdir(wdt)
 
-        return True
-
     def _get_job_dir(self, job_id, subjob=False):
         if subjob:
             return os.path.join(self.subjobdir, job_id)
@@ -268,8 +266,6 @@ class MethodRunner:
             self.logger.error(
                 f"Job {job_id} ran, but {of} contained an error. Error in output job msg:{error_msg} code:{error_code} name:{error_name} error:{error_error}"
             )
-            if output.get("result") is None:
-                output["result"] = output.get("error")
 
         return output
 
