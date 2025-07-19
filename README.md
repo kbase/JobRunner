@@ -69,6 +69,15 @@ export SDK_CALLBACK_URL=http://localhost:9999
 Here is a quick start guide for running test for the Job Runner code.
 See the SDK guide for information about running test of SDK apps.
 
+Note that the
+[cromwell-44.jar](https://github.com/broadinstitute/cromwell/releases/download/44/cromwell-44.jar)
+file must exist in your `$HOME` directory, as well as a `cromwell.conf` file, which can be
+empty.
+
+Also note that there are `uv` `pyproject.toml` and `uv.lock` files provided for your
+comfort and convenience. They currently are not integrated into builds and must manually be kept
+in sync with the `requirements*.txt` files, but they can simplify running tests.
+
 ```
 pip install -r requirements.txt -r requirements-dev.txt
 

@@ -182,7 +182,7 @@ class SpecialRunner:
 
     def _wdl_run(self, stype, config, data, job_id, queues):
         """
-        This subbmits the job to the batch system and starts
+        This submits the job to the batch system and starts
         a thread to monitor the progress.
 
         """
