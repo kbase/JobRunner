@@ -109,5 +109,10 @@ class SpecialRunnerTest(unittest.TestCase):
         for line in output:
             if line["line"].find("workflow finished with status 'Succeeded'") > 0:
                 count += 1
+        if not count:
+            print("\n\ntest_run_wdl logs:")
+            for line in output:
+                print(line["line"])
+            print()
         self.assertTrue(count)
         self.assertLess(self.logger.ct, 10)
