@@ -436,7 +436,7 @@ class JobRunner(object):
 
         self.prov = Provenance(job_params)
         self._init_workdir()
-        job_dir = self.workdir
+        job_dir = os.path.join(self.workdir, "workdir")  # TODO should handle this in mr
         # TODO: This is calling a private method.
         self.mr._init_workdir(config, job_dir, job_params)
         self.config.user = self._validate_token()

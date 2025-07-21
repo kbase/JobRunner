@@ -1,6 +1,6 @@
 [project]
 name = "jobrunner"
-version = "0.0.2"
+version = "0.1.0"
 description = "The EE2 JobRunner for kB_SDK apps."
 readme = "README.md"
 requires-python = ">=3.9"
