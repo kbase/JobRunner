@@ -95,7 +95,7 @@ def _handle_checkjob(data):
         resp["finished"] = 1
         try:
             if "error" in resp:
-                return {"result": [resp], "error": resp["error"]}
+                return resp
         except Exception as e:
             logger.debug(e)
 
