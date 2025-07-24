@@ -10,7 +10,7 @@ def setup():
     scripts_dir = "%s/../scripts/" % (test_dir)
 
     os.environ["PATH"] = "%s:%s:%s" % (bin_dir, scripts_dir, os.environ["PATH"])
-    
+
     yield
 
     if os.path.exists("ssh.out"):

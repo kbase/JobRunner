@@ -6,12 +6,12 @@ RUN apt update \
 
 # install uv
 RUN pip install --upgrade pip && \
-    pip install uv	
+    pip install uv==0.8.2
 
 # install deps
 RUN mkdir /uvinstall
 WORKDIR /uvinstall
-COPY pyproject.toml uv.lock .python-version .
+COPY pyproject.toml uv.lock .python-version ./
 ENV UV_PROJECT_ENVIRONMENT=/usr/local/
 RUN uv sync --locked --inexact --no-dev
 

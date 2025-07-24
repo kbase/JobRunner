@@ -8,3 +8,4 @@ runtester.ready
 test/RunTester
 build/
 /.pytest_cache/
+/.venv/
