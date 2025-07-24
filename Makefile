@@ -16,6 +16,9 @@ testimage:
 	docker pull kbase/runtester
 	docker tag kbase/runtester test/runtester
 
+updatereqs:
+	uv pip compile --all-extras --output-file requirements.txt pyproject.toml
+
 test:
 	PYTHONPATH=. uv run pytest -m "not online" test
 

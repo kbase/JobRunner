@@ -2,6 +2,17 @@
 
 The job runner is started by the batch/resource manager system and is the component that actually executes the SDK module.  It also provides the callback handler and pushes logs to the execution engine logging system.
 
+## Updating dependencies
+
+After updating the project's dependencies with `uv`, be sure to run
+
+```
+make updatereqs
+```
+
+to regenerate the `requirements.txt` file. Other repositories are dependent on this file
+to properly integrate the job runner.
+
 ## Callback Server Mode
 
 It is possible to run the callback server in a standalone mode.  This can be used to speed up
