@@ -53,7 +53,7 @@ export KB_ADMIN_AUTH_TOKEN="xxxxxxxxxxxx"
 docker run --name cb -d \
    -e KB_AUTH_TOKEN \
    -e KB_ADMIN_AUTH_TOKEN \
-   -e KB_BASE_URL=https://ci.kbase.us/services \
+   -e KB_BASE_URL=https://ci.kbase.us/services\ \
    -e CALLBACK_PORT=9999 \
    -e JOB_DIR \
    -v $JOB_DIR:$JOB_DIR \
@@ -74,12 +74,8 @@ Note that the
 file must exist in your `$HOME` directory, as well as a `cromwell.conf` file, which can be
 empty. Java 8 is required to run Cromwell.
 
-Also note that there are `uv` `pyproject.toml` and `uv.lock` files provided for your
-comfort and convenience. They currently are not integrated into builds and must manually be kept
-in sync with the `requirements*.txt` files, but they can simplify running tests.
-
 ```
-pip install -r requirements.txt -r requirements-dev.txt
+uv sync --dev  # only the first time or when uv.lock changes
 
 # Set the DOCKER_HOST if this doesn't work out of the box
 export DOCKER_HOST=unix://$HOME/.docker/run/docker.sock

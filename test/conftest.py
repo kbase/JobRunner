@@ -1,6 +1,8 @@
 import os
+import pytest
 
 
+@pytest.fixture(autouse=True, scope="session")
 def setup():
     print("Module setup")
     test_dir = os.path.dirname(os.path.abspath(__file__))
@@ -8,9 +10,8 @@ def setup():
     scripts_dir = "%s/../scripts/" % (test_dir)
 
     os.environ["PATH"] = "%s:%s:%s" % (bin_dir, scripts_dir, os.environ["PATH"])
-    # Create __init__
+    
+    yield
 
-
-def teardown():
     if os.path.exists("ssh.out"):
         os.unlink("ssh.out")

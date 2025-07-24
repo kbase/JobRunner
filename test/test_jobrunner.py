@@ -1,17 +1,17 @@
 # -*- coding: utf-8 -*-
 import os
+import pytest
 import unittest
 from copy import deepcopy
 from time import time as _time
 from time import sleep
 from unittest.mock import patch, MagicMock
 
-from nose.plugins.attrib import attr
 from requests import ConnectionError
 
 from JobRunner.JobRunner import JobRunner
 from JobRunner.config import Config
-from .mock_data import (
+from mock_data import (
     CATALOG_GET_MODULE_VERSION,
     EE2_JOB_PARAMS,
     EE2_LIST_CONFIG,
@@ -20,6 +20,11 @@ from .mock_data import (
 )
 from docker.errors import NotFound
 from JobRunner.exceptions import CantRestartJob
+
+
+# TODO TEST some tests are marked online but always fail
+#           Should investigate and fix if possble
+#           Repo was set up to skip them when I got here
 
 
 class MockLogger(object):
@@ -84,7 +89,7 @@ class JobRunnerTest(unittest.TestCase):
             except OSError:
                 pass
 
-    @attr("online")
+    @pytest.mark.online
     @patch("JobRunner.JobRunner.KBaseAuth", autospec=True)
     @patch("JobRunner.JobRunner.EE2", autospec=True)
     def test_run_sub(self, mock_ee2, mock_auth):
@@ -116,7 +121,7 @@ class JobRunnerTest(unittest.TestCase):
         self.assertNotIn("error", out)
         sleep(1)
 
-    @attr("offline")
+    @pytest.mark.offline
     @patch("JobRunner.JobRunner.KBaseAuth", autospec=True)
     @patch("JobRunner.JobRunner.EE2", autospec=True)
     def test_run_mock_app(self, mock_ee2, mock_auth):
@@ -144,7 +149,7 @@ class JobRunnerTest(unittest.TestCase):
         self.assertIn("result", out)
         self.assertNotIn("error", out)
 
-    @attr("offline")
+    @pytest.mark.offline
     @patch("JobRunner.JobRunner.KBaseAuth", autospec=True)
     @patch("JobRunner.JobRunner.EE2", autospec=True)
     def test_run_volume(self, mock_ee2, mock_auth):
@@ -175,7 +180,7 @@ class JobRunnerTest(unittest.TestCase):
         self.assertIn("result", out)
         self.assertNotIn("error", out)
 
-    @attr("online")
+    @pytest.mark.online
     @patch("JobRunner.JobRunner.KBaseAuth", autospec=True)
     @patch("JobRunner.JobRunner.EE2", autospec=True)
     def test_cancel(self, mock_ee2, mock_auth):
@@ -210,7 +215,7 @@ class JobRunnerTest(unittest.TestCase):
             with self.assertRaises(expected_exception=NotFound):
                 c.reload()
 
-    @attr("offline")
+    @pytest.mark.offline
     @patch("JobRunner.JobRunner.KBaseAuth", autospec=True)
     @patch("JobRunner.JobRunner.EE2", autospec=True)
     def test_max_jobs(self, mock_ee2, mock_auth):
@@ -237,7 +242,7 @@ class JobRunnerTest(unittest.TestCase):
         self.assertIn("error", out)
         # Check that all containers are gone
 
-    @attr("online")
+    @pytest.mark.online
     @patch("JobRunner.JobRunner.EE2", autospec=True)
     def test_run_online(self, mock_ee2):
         self._cleanup(self.jobid)
@@ -299,7 +304,7 @@ class JobRunnerTest(unittest.TestCase):
         emsg = "Failed to get job parameters. Exiting."
         self.assertEqual(mlog.errors[0], emsg)
 
-    @attr("offline")
+    @pytest.mark.offline
     @patch("JobRunner.JobRunner.EE2", autospec=True)
     @patch("JobRunner.JobRunner.KBaseAuth", autospec=True)
     @patch("JobRunner.JobRunner.requests", autospec=True)
@@ -318,7 +323,7 @@ class JobRunnerTest(unittest.TestCase):
         with self.assertRaises(OSError):
             jr._get_token_lifetime()
 
-    @attr("offline")
+    @pytest.mark.offline
     @patch("JobRunner.JobRunner.EE2", autospec=True)
     @patch("JobRunner.JobRunner.KBaseAuth", autospec=True)
     def test_expire_loop(self, mock_auth, mock_ee2):
@@ -362,7 +367,7 @@ class JobRunnerTest(unittest.TestCase):
         params["params"] = [{"submit_script": "submit.sl"}]
         jr._submit_special(self.config, "1234", params)
 
-    @attr("online")
+    @pytest.mark.online
     @patch("JobRunner.JobRunner.KBaseAuth", autospec=True)
     @patch("JobRunner.JobRunner.EE2", autospec=True)
     def test_run_slurm(self, mock_ee2, mock_auth):
@@ -389,7 +394,7 @@ class JobRunnerTest(unittest.TestCase):
         out = jr.run()
         self.assertNotIn("error", out)
 
-    @attr("online")
+    @pytest.mark.online
     @patch("JobRunner.JobRunner.KBaseAuth", autospec=True)
     @patch("JobRunner.JobRunner.EE2", autospec=True)
     def test_run_wdl(self, mock_ee2, mock_auth):
