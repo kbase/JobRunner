@@ -53,7 +53,7 @@ export KB_ADMIN_AUTH_TOKEN="xxxxxxxxxxxx"
 docker run --name cb -d \
    -e KB_AUTH_TOKEN \
    -e KB_ADMIN_AUTH_TOKEN \
-   -e KB_BASE_URL=https://ci.kbase.us/services\ \
+   -e KB_BASE_URL=https://ci.kbase.us/services/ \
    -e CALLBACK_PORT=9999 \
    -e JOB_DIR \
    -v $JOB_DIR:$JOB_DIR \
