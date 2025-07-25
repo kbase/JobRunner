@@ -115,7 +115,7 @@ make testimage
 make test
 ```
 
-There is a scripot at [run_tests.sh](./run_tests.sh) that can help make this process simpler.
+There is a script at [run_tests.sh](./run_tests.sh) that can help make this process simpler.
 
 ## Using the CallBack Server 
 * Install a kb-sdk module such as DataFileUtil using `kb-sdk install` or copying from an existing apps `lib/installed_clients` directory
