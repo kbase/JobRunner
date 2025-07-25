@@ -80,10 +80,21 @@ export SDK_CALLBACK_URL=http://localhost:9999
 Here is a quick start guide for running test for the Job Runner code.
 See the SDK guide for information about running test of SDK apps.
 
-Note that the
-[cromwell-44.jar](https://github.com/broadinstitute/cromwell/releases/download/44/cromwell-44.jar)
-file must exist in your `$HOME` directory, as well as a `cromwell.conf` file, which can be
-empty. Java 8 is required to run Cromwell.
+Requirements:
+* Java 8+
+* The
+  [cromwell-44.jar](https://github.com/broadinstitute/cromwell/releases/download/44/cromwell-44.jar)
+  must exist in `$HOME`
+* `cromwell.conf` must exist in `$HOME`. It may be an empty file.
+* The env vars below must be set.
+    * Required:
+        * The 2 auth token env vars (although they don't have to be a valid token
+        * KB_BASE_URL must start with http but otherwise can be anything
+    * Required for MacOS:
+        * JOB_DIR, since otherwise the tests attempt to mount /tmp
+    * Optional:
+        * Everything else, although you may need to set DOCKER_HOST depending on your
+          system setup.
 
 ```
 uv sync --dev  # only the first time or when uv.lock changes
@@ -95,15 +106,16 @@ export DOCKER_HOST=unix://$HOME/.docker/run/docker.sock
 export KB_AUTH_TOKEN="xxxxxxxxx"
 export KB_ADMIN_AUTH_TOKEN="xxxxxxxxxxxx"
 export KB_BASE_URL=https://ci.kbase.us/services
-export CALLBACK_IP=127.0.0.1
-export CALLBACK_PORT=9999
-# Set ref data to an area accessible by Docker
+# Set ref data and job dir to areas accessible by Docker
 export KB_REF_DATA=/path/to/local/refdata
+export JOB_DIR=/path/to/job/dir
 
 make mock
 make testimage
 make test
 ```
+
+There is a scripot at [run_tests.sh](./run_tests.sh) that can help make this process simpler.
 
 ## Using the CallBack Server 
 * Install a kb-sdk module such as DataFileUtil using `kb-sdk install` or copying from an existing apps `lib/installed_clients` directory
