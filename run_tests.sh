@@ -9,7 +9,7 @@ uv sync --dev
 
 if [ ! -f "$HOME"/"$CROMWELL_JAR" ]; then
     echo "Downloading Cromwell JAR file..."
-    wget https://github.com/broadinstitute/cromwell/releases/download/44/$CROMWELL_JAR -O $HOME/$CROMWELL_JAR
+    wget "https://github.com/broadinstitute/cromwell/releases/download/44/$CROMWELL_JAR" -O "$HOME/$CROMWELL_JAR"
 else
     echo "Cromwell JAR file already exists, skipping download."
 fi
@@ -28,8 +28,8 @@ export KB_BASE_URL="https://ci.kbase.us/services/"
 export JOB_DIR=$(pwd)/test_jobdir
 export KB_REF_DATA=$(pwd)/test_refdata
 
-mkdir -p $JOB_DIR
-mkdir -p $KB_REF_DATA
+mkdir -p "$JOB_DIR"
+mkdir -p "$KB_REF_DATA"
 
 make mock
 make testimage
