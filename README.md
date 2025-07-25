@@ -39,7 +39,7 @@ export JOB_DIR=/full/path/to/work/area
 # Set tokens and URL
 export KB_AUTH_TOKEN="xxxxxxxxx"
 export KB_ADMIN_AUTH_TOKEN="xxxxxxxxxxxx"
-export KB_BASE_URL=https://ci.kbase.us/services
+export KB_BASE_URL=https://ci.kbase.us/services/
 
 # Optional
 export KB_REF_DATA=/path/to/local/refdata
@@ -105,7 +105,7 @@ export DOCKER_HOST=unix://$HOME/.docker/run/docker.sock
 # Be sure to set both tokens and the KB_BASE_URL. Other variables are optional.
 export KB_AUTH_TOKEN="xxxxxxxxx"
 export KB_ADMIN_AUTH_TOKEN="xxxxxxxxxxxx"
-export KB_BASE_URL=https://ci.kbase.us/services
+export KB_BASE_URL=https://ci.kbase.us/services/
 # Set ref data and job dir to areas accessible by Docker
 export KB_REF_DATA=/path/to/local/refdata
 export JOB_DIR=/path/to/job/dir
