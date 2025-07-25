@@ -13,8 +13,8 @@ mock:
 	docker build -t mock_app ./test/mock_app
 
 testimage:
-	docker pull kbase/runtester
-	docker tag kbase/runtester test/runtester
+	docker pull docker.io/kbase/runtester
+	docker tag docker.io/kbase/runtester test/runtester
 
 updatereqs:
 	uv pip compile --all-extras --output-file requirements.txt pyproject.toml
