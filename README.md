@@ -2,6 +2,17 @@
 
 The job runner is started by the batch/resource manager system and is the component that actually executes the SDK module.  It also provides the callback handler and pushes logs to the execution engine logging system.
 
+## Updating dependencies
+
+After updating the project's dependencies with `uv`, be sure to run
+
+```
+make updatereqs
+```
+
+to regenerate the `requirements.txt` file. Other repositories are dependent on this file
+to properly integrate the job runner.
+
 ## Callback Server Mode
 
 It is possible to run the callback server in a standalone mode.  This can be used to speed up
@@ -28,7 +39,7 @@ export JOB_DIR=/full/path/to/work/area
 # Set tokens and URL
 export KB_AUTH_TOKEN="xxxxxxxxx"
 export KB_ADMIN_AUTH_TOKEN="xxxxxxxxxxxx"
-export KB_BASE_URL=https://ci.kbase.us/services
+export KB_BASE_URL=https://ci.kbase.us/services/
 
 # Optional
 export KB_REF_DATA=/path/to/local/refdata
@@ -53,7 +64,7 @@ export KB_ADMIN_AUTH_TOKEN="xxxxxxxxxxxx"
 docker run --name cb -d \
    -e KB_AUTH_TOKEN \
    -e KB_ADMIN_AUTH_TOKEN \
-   -e KB_BASE_URL=https://ci.kbase.us/services \
+   -e KB_BASE_URL=https://ci.kbase.us/services/ \
    -e CALLBACK_PORT=9999 \
    -e JOB_DIR \
    -v $JOB_DIR:$JOB_DIR \
@@ -69,17 +80,24 @@ export SDK_CALLBACK_URL=http://localhost:9999
 Here is a quick start guide for running test for the Job Runner code.
 See the SDK guide for information about running test of SDK apps.
 
-Note that the
-[cromwell-44.jar](https://github.com/broadinstitute/cromwell/releases/download/44/cromwell-44.jar)
-file must exist in your `$HOME` directory, as well as a `cromwell.conf` file, which can be
-empty. Java 8 is required to run Cromwell.
-
-Also note that there are `uv` `pyproject.toml` and `uv.lock` files provided for your
-comfort and convenience. They currently are not integrated into builds and must manually be kept
-in sync with the `requirements*.txt` files, but they can simplify running tests.
+Requirements:
+* Java 8+
+* The
+  [cromwell-44.jar](https://github.com/broadinstitute/cromwell/releases/download/44/cromwell-44.jar)
+  must exist in `$HOME`
+* `cromwell.conf` must exist in `$HOME`. It may be an empty file.
+* The env vars below must be set.
+    * Required:
+        * The 2 auth token env vars (although they don't have to be a valid token)
+        * KB_BASE_URL - must start with http but otherwise can be anything
+    * Required for MacOS:
+        * JOB_DIR, since otherwise the tests attempt to mount /tmp
+    * Optional:
+        * Everything else, although you may need to set DOCKER_HOST depending on your
+          system setup.
 
 ```
-pip install -r requirements.txt -r requirements-dev.txt
+uv sync --dev  # only the first time or when uv.lock changes
 
 # Set the DOCKER_HOST if this doesn't work out of the box
 export DOCKER_HOST=unix://$HOME/.docker/run/docker.sock
@@ -87,16 +105,17 @@ export DOCKER_HOST=unix://$HOME/.docker/run/docker.sock
 # Be sure to set both tokens and the KB_BASE_URL. Other variables are optional.
 export KB_AUTH_TOKEN="xxxxxxxxx"
 export KB_ADMIN_AUTH_TOKEN="xxxxxxxxxxxx"
-export KB_BASE_URL=https://ci.kbase.us/services
-export CALLBACK_IP=127.0.0.1
-export CALLBACK_PORT=9999
-# Set ref data to an area accessible by Docker
+export KB_BASE_URL=https://ci.kbase.us/services/
+# Set ref data and job dir to areas accessible by Docker
 export KB_REF_DATA=/path/to/local/refdata
+export JOB_DIR=/path/to/job/dir
 
 make mock
 make testimage
 make test
 ```
+
+There is a script at [run_tests.sh](./run_tests.sh) that can help make this process simpler.
 
 ## Using the CallBack Server 
 * Install a kb-sdk module such as DataFileUtil using `kb-sdk install` or copying from an existing apps `lib/installed_clients` directory

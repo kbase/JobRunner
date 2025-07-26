@@ -13,13 +13,14 @@ mock:
 	docker build -t mock_app ./test/mock_app
 
 testimage:
-	docker pull kbase/runtester
-	docker tag kbase/runtester test/runtester
+	docker pull docker.io/kbase/runtester
+	docker tag docker.io/kbase/runtester test/runtester
 
+updatereqs:
+	uv pip compile --all-extras --output-file requirements.txt pyproject.toml
 
 test:
-	nosetests -A "not online" -s -x -v --with-coverage --cover-package=JobRunner --cover-erase --cover-html --cover-html-dir=./test_coverage .
-
+	PYTHONPATH=. uv run pytest -m "not online" test
 
 clean:
 	rm -rfv $(LBIN_DIR)

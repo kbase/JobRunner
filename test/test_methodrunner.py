@@ -7,7 +7,7 @@ from pathlib import Path
 
 from JobRunner.MethodRunner import MethodRunner
 from JobRunner.config import Config
-from .mock_data import (
+from mock_data import (
     EE2_JOB_PARAMS,
     CATALOG_GET_MODULE_VERSION,
     CATALOG_GET_SECURE_CONFIG_PARAMS,

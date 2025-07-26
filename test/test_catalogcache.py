@@ -7,7 +7,7 @@ from JobRunner.config import Config
 from JobRunner.CatalogCache import CatalogCache
 
 from copy import deepcopy
-from .mock_data import (
+from mock_data import (
     CATALOG_GET_MODULE_VERSION,
     CATALOG_LIST_VOLUME_MOUNTS,
     CATALOG_GET_SECURE_CONFIG_PARAMS,

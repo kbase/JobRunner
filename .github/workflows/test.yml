@@ -36,16 +36,18 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
+    - name: Install uv
+      uses: astral-sh/setup-uv@v6
+
     - name: Install dependecies
       # tried VaultVulp/action-pipenv but pytest wasn't on the path post action
       shell: bash
       run: |
-        pip install -r requirements.txt
-        pip install -r requirements-dev.txt
-        pip freeze
-        make mock
-        docker pull kbase/runtester
-        docker tag kbase/runtester test/runtester
+        export UV_PROJECT_ENVIRONMENT="${pythonLocation}"
+        uv sync --locked
+        docker build -t mock_app ./test/mock_app
+        docker pull docker.io/kbase/runtester
+        docker tag docker.io/kbase/runtester test/runtester
         curl -q -L -o $HOME/cromwell-44.jar https://github.com/broadinstitute/cromwell/releases/download/44/cromwell-44.jar
         touch ~/cromwell.conf
         ulimit -a
@@ -57,9 +59,10 @@ jobs:
           KB_AUTH_TOKEN: ${{ secrets.KBASE_CI_TOKEN  }}
           KB_ADMIN_AUTH_TOKEN: ${{ secrets.KBASE_CI_TOKEN  }}
           KB_BASE_URL: https://ci.kbase.us/services
-      run: make test
+      run: PYTHONPATH=. pytest -m "not online" --cov=JobRunner --cov-report=xml test
 
-#    - name: Upload coverage to Codecov
-#      uses: codecov/codecov-action@v3
-#      with:
-#        fail_ci_if_error: true
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v5
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        fail_ci_if_error: true

@@ -7,3 +7,6 @@ Project_Default.xml
 runtester.ready
 test/RunTester
 build/
+/.pytest_cache/
+/.venv/
+/test_jobdir/
