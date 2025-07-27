@@ -1,11 +1,11 @@
+from contextlib import closing
+import json
 import os
-from multiprocessing import Process
+import requests
+import socket
+
 from JobRunner.config import Config
 from JobRunner.JobRunner import JobRunner
-import socket
-from contextlib import closing
-import requests
-import json
 
 
 class Callback():
@@ -27,7 +27,11 @@ class Callback():
             raise ValueError("params in Provenance file isn't a list")
         return job_params
 
-    def run(self):
+    def start(self):
+        if not self.port:
+            self.port = find_free_port()
+        self.callback_url = f"http://{self.ip}:{self.port}"
+        os.environ["SDK_CALLBACK_URL"] = self.callback_url
         os.environ['CALLBACK_IP'] = self.ip
         job_params = None
         job_params_file = os.environ.get('PROV_FILE')
@@ -36,25 +40,18 @@ class Callback():
             job_params = self.load_prov(job_params_file)
 
         try:
-            jr = JobRunner(self.conf,
-                           port=self.port)
-            jr.callback(job_params=job_params)
+            self.jr = JobRunner(self.conf, port=self.port)
+            self.jr.callback(job_params=job_params)
         except Exception as e:
             print("An unhandled error was encountered")
             print(e)
             raise e
 
-    def start(self):
-        if not self.port:
-            self.port = find_free_port()
-        self.callback_url = f"http://{self.ip}:{self.port}"
-        os.environ["SDK_CALLBACK_URL"] = self.callback_url
-        self.cbs = Process(target=self.run, daemon=False)
-        self.cbs.start()
-
     def stop(self):
-        self.cbs.terminate()
+        self.jr.stop()
 
+    def wait_for_stop(self):
+        self.jr.wait_for_stop()
 
 def get_ip():
     ip = requests.get('https://ipv4.jsonip.com').json()['ip']
@@ -71,6 +68,7 @@ def find_free_port():
 def main():
     cb = Callback()
     cb.start()
+    cb.wait_for_stop()  # block forever
 
 
 if __name__ == '__main__':

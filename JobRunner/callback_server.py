@@ -1,4 +1,5 @@
 import asyncio
+import multiprocessing
 import os
 from queue import Empty
 import traceback
@@ -19,8 +20,15 @@ outputs = dict()
 prov = []
 
 
-def create_app():
+def create_app(shutdown_event: multiprocessing.Event = None):
     app = Sanic("jobrunner")
+
+    if shutdown_event:
+        @app.after_server_start
+        async def shutdown_listener(app, _):
+            while not shutdown_event.is_set():
+                await asyncio.sleep(0.1)
+            app.stop()
 
     @app.route("/", methods=["GET", "POST"])
     async def root(request):
@@ -46,6 +54,7 @@ def start_callback_server(
         in_queue,
         token,
         bypass_token,
+        shutdown_event: multiprocessing.Event = None
     ):
     timeout = 3600
     max_size_bytes = 100000000000
@@ -59,7 +68,7 @@ def start_callback_server(
         "KEEP_ALIVE_TIMEOUT": timeout,
         "REQUEST_MAX_SIZE": max_size_bytes,
     }
-    app = create_app()
+    app = create_app(shutdown_event=shutdown_event)
     app.config.update(conf)
     if os.environ.get("IN_CONTAINER"):
         ip = "0.0.0.0"

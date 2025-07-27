@@ -1,10 +1,11 @@
 import logging
-from multiprocessing import Process, Queue
+from multiprocessing import Process, Queue, Event
 import os
 from queue import Empty
 import requests
 import signal
 import socket
+import threading
 from time import sleep as _sleep, time as _time
 
 from clients.authclient import KBaseAuth
@@ -64,7 +65,10 @@ class JobRunner(object):
         self.sr = SpecialRunner(self.config, self.job_id, logger=self.logger)
         catalog = Catalog(config.catalog_url, token=self.admin_token)
         self.cc = CatalogCache(catalog, self.admin_token)
+        self._shutdown_event = Event()
+        self._stop = False
         self.cbs = None
+        self._watch_thread = None
 
         signal.signal(signal.SIGINT, self.shutdown)
 
@@ -176,7 +180,7 @@ class JobRunner(object):
         # Run a thread for 7 day max job runtime
         ct = 1
         exp_time = self._get_token_lifetime() - 600
-        while True:
+        while not self._stop:
             try:
                 req = self.jr_queue.get(timeout=1)
                 if _time() > exp_time:
@@ -455,6 +459,24 @@ class JobRunner(object):
             self.token,
             self.bypass_token,
         ]
-        self.cbs = Process(target=start_callback_server, args=cb_args)
+        kwargs = {"shutdown_event": self._shutdown_event}
+        self.cbs = Process(target=start_callback_server, args=cb_args, kwargs=kwargs)
         self.cbs.start()
-        self._watch(config)
+        self._watch_thread = threading.Thread(target=self._watch, args=[config])
+        self._watch_thread.start()
+
+    def stop(self):
+        """
+        Stop any running callback server and stop the job runner event loop.
+        
+        After calling this method this instance of the job runner is no longer usable.
+        """
+        self._shutdown_event.set()
+        self._stop = True
+        self.wait_for_stop()
+
+    def wait_for_stop(self):
+        if self._watch_thread:
+            self._watch_thread.join()
+        if self.cbs:
+            self.cbs.join()
