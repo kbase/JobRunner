@@ -1,14 +1,14 @@
 import logging
+from multiprocessing import Process, Queue
 import os
+from queue import Empty
+import requests
 import signal
 import socket
-from multiprocessing import Process, Queue
-from queue import Empty
-from time import sleep as _sleep
-from time import time as _time
+from time import sleep as _sleep, time as _time
 
-import requests
 from clients.authclient import KBaseAuth
+from clients.CatalogClient import Catalog
 from clients.execution_engine2Client import execution_engine2 as EE2
 
 from .CatalogCache import CatalogCache
@@ -22,6 +22,10 @@ from .provenance import Provenance
 
 logging.basicConfig(format="%(created)s %(levelname)s: %(message)s",
                     level=logging.INFO)
+
+
+# TODO CODE this whole system seems much too complex and is trying to serve too many purposes
+#           Likely needs a large rethink / refactor
 
 
 class JobRunner(object):
@@ -58,7 +62,8 @@ class JobRunner(object):
         self.debug = config.debug
         self.mr = MethodRunner(self.config, logger=self.logger, debug=self.debug)
         self.sr = SpecialRunner(self.config, self.job_id, logger=self.logger)
-        self.cc = CatalogCache(config)
+        catalog = Catalog(config.catalog_url, token=self.admin_token)
+        self.cc = CatalogCache(catalog, self.admin_token)
         self.cbs = None
 
         signal.signal(signal.SIGINT, self.shutdown)
@@ -169,10 +174,9 @@ class JobRunner(object):
     def _watch(self, config: dict) -> dict:
         # Run a thread to check for expired token
         # Run a thread for 7 day max job runtime
-        cont = True
         ct = 1
         exp_time = self._get_token_lifetime() - 600
-        while cont:
+        while True:
             try:
                 req = self.jr_queue.get(timeout=1)
                 if _time() > exp_time:
@@ -244,7 +248,7 @@ class JobRunner(object):
             self.port = sock.getsockname()[1]
         sock.close()
         url = "http://{}:{}/".format(self.ip, self.port)
-        self.logger.log("Job runner recieved Callback URL {}".format(url))
+        self.logger.log("Job runner received Callback URL {}".format(url))
         self.callback_url = url
 
     def _update_prov(self, action: dict):
