@@ -20,7 +20,7 @@ class CatalogCacheTest(unittest.TestCase):
         return CatalogCache(catalog, token="bogus"), catalog
 
     def test_cache(self):
-        cc, catalog  = self.get_mocks()
+        cc, catalog = self.get_mocks()
         catalog.get_module_version.return_value = CATALOG_GET_MODULE_VERSION
         out = cc.get_module_info("bogus", "method")
         self.assertIn("git_commit_hash", out)
@@ -33,7 +33,7 @@ class CatalogCacheTest(unittest.TestCase):
         self.assertIn("secure_config_params", out)
 
     def test_secure_params(self):
-        cc, catalog  = self.get_mocks()
+        cc, catalog = self.get_mocks()
         catalog.get_module_version.return_value = CATALOG_GET_MODULE_VERSION
         catalog.get_secure_config_params.return_value = (
             CATALOG_GET_SECURE_CONFIG_PARAMS
@@ -47,7 +47,7 @@ class CatalogCacheTest(unittest.TestCase):
         self.assertGreater(len(out["secure_config_params"]), 0)
 
     def test_volume(self):
-        cc, catalog  = self.get_mocks()
+        cc, catalog = self.get_mocks()
         vols = deepcopy(CATALOG_LIST_VOLUME_MOUNTS)
         catalog.list_volume_mounts.return_value = vols
         out = cc.get_volume_mounts("bogus", "method", "upload")
