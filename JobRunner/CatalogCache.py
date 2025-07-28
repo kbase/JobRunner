@@ -2,14 +2,19 @@ from clients.CatalogClient import Catalog
 
 
 class CatalogCache(object):
-    def __init__(self, config):
-        self.admin_token = config.admin_token
-        self.catalog_url = config.catalog_url
-        self.catalog = Catalog(self.catalog_url, token=self.admin_token)
+
+    def __init__(self, catalog: Catalog, token: str = None):
+        """
+        Initialize the cache. If the catalog client has a token, it must be a catalog admin
+        token.
+        """
+        self.catalog = catalog
+        # TODO CODE add a method to SDK clients to get the token, then use that here
+        self.has_admin_token = bool(token)
         self.module_cache = dict()
 
     def get_volume_mounts(self, module, method, cgroup):
-        if self.admin_token is None:
+        if not self.has_admin_token:
             return []
         req = {"module_name": module, "function_name": method, "client_group": cgroup}
         resp = self.catalog.list_volume_mounts(req)
@@ -28,7 +33,7 @@ class CatalogCache(object):
             module_info = self.catalog.get_module_version(req)
             # Lookup secure params
             sp = []
-            if self.admin_token:
+            if self.has_admin_token:
                 req["load_all_versions"] = 0
                 sp = self.catalog.get_secure_config_params(req)
             module_info["secure_config_params"] = sp
