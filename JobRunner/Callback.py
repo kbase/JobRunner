@@ -14,7 +14,6 @@ class Callback():
         self.conf = Config(job_id="callback", workdir=workdir, use_ee2=False)
         self.ip = os.environ.get('CALLBACK_IP') or get_ip()
         self.port = os.environ.get('CALLBACK_PORT')
-        self.cbs = None
         self.callback_url = None
 
     def load_prov(self, job_params_file):
@@ -27,7 +26,7 @@ class Callback():
             raise ValueError("params in Provenance file isn't a list")
         return job_params
 
-    def start(self):
+    def start_callback(self):
         if not self.port:
             self.port = find_free_port()
         self.callback_url = f"http://{self.ip}:{self.port}"
@@ -67,7 +66,7 @@ def find_free_port():
 
 def main():
     cb = Callback()
-    cb.start()
+    cb.start_callback()
     cb.wait_for_stop()  # block forever
 
 

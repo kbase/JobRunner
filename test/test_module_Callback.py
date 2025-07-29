@@ -20,14 +20,12 @@ def assert_callback_attributes(callback,
                                workdir="/tmp/",
                                ip="127.0.0.1",
                                port="8080",
-                               cbs=None,
                                callback_url=None):
     # Helper function to assert Callback attributes
     assert callback.conf.job_id == job_id
     assert callback.conf.workdir == workdir
     assert callback.ip == ip
     assert callback.port == port
-    assert callback.cbs == cbs
     assert callback.callback_url == callback_url
 
 
