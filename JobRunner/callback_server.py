@@ -11,6 +11,7 @@ from sanic.exceptions import SanicException
 from sanic.log import logger
 from sanic.response import json
 
+from .provenance import Provenance
 
 Config.SANIC_REQUEST_TIMEOUT = 300
 
@@ -20,8 +21,8 @@ outputs = dict()
 prov = []
 
 
-def create_app(shutdown_event: multiprocessing.Event = None):
-    app = Sanic("jobrunner")
+def create_app(app_name: str = "jobrunner", shutdown_event: multiprocessing.Event = None):
+    app = Sanic(app_name)
 
     if shutdown_event:
         @app.after_server_start
@@ -54,6 +55,7 @@ def start_callback_server(
         in_queue,
         token,
         bypass_token,
+        app_name: str = "jobrunner",
         shutdown_event: multiprocessing.Event = None
     ):
     timeout = 3600
@@ -68,7 +70,7 @@ def start_callback_server(
         "KEEP_ALIVE_TIMEOUT": timeout,
         "REQUEST_MAX_SIZE": max_size_bytes,
     }
-    app = create_app(shutdown_event=shutdown_event)
+    app = create_app(app_name=app_name, shutdown_event=shutdown_event)
     app.config.update(conf)
     if os.environ.get("IN_CONTAINER"):
         ip = "0.0.0.0"
@@ -102,6 +104,21 @@ def _check_rpc_token(app, token):
 def _handle_get_provenance(app):
     _check_finished(app, info="Handle get provenance")
     return {"result": [prov]}
+
+
+def _handle_set_provenance(app, data):
+    # strict, should be used carefully
+    if os.environ.get("CALLBACK_ALLOW_SET_PROVENANCE") != "true":
+        return _error("Setting provenance is not enabled")
+    if (not data.get("params")
+        or not isinstance(data["params"], list)
+        or len(data["params"]) != 1
+        or not isinstance(data["params"][0], dict)
+    ):
+        return _error("method params must be a list containing exactly one provenance action")
+    prov = Provenance(data["params"][0])
+    app.config["out_q"].put(["set_provenance", None, prov])
+    return {"result": [prov.get_prov()]}
 
 
 def _handle_submit(app, module, method, data, token):
@@ -148,8 +165,13 @@ async def _process_rpc(app, data, token):
     elif method.startswith("_check_job"):
         return _handle_checkjob(app, data=data)
     # Provenance
-    elif method.startswith("get_provenance"):
-        return _handle_get_provenance(app)
+    elif module == "CallbackServer":
+        if method == "get_provenance":
+            return _handle_get_provenance(app)
+        if method == "set_provenance":
+            return _handle_set_provenance(app, data)
+        # https://www.jsonrpc.org/specification#error_object
+        return _error(f"No such CallbackServer method: {method}", code=-32601)
     else:
         # Sync Job
         _check_rpc_token(app, token)

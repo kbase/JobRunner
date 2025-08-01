@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# The KB_AUTH_TOKEN environment variable must be set to a valid token for the base url
+
 # Java must be installed to run this script.
 # For mac: https://www.oracle.com/java/technologies/downloads/#jdk24-mac
 
@@ -18,9 +20,9 @@ touch "$HOME"/cromwell.conf
 # uncomment this line and fill in the proper location for the docker socket if necessary
 # export DOCKER_HOST=unix:///var/run/docker.sock:
 
-# These must be set to a NON empty string or the tests will FAIL
-export KB_AUTH_TOKEN="fake"
-export KB_ADMIN_AUTH_TOKEN="fake"
+# These must be a valid KBase authentication token for the base url
+export KB_AUTH_TOKEN="$KB_AUTH_TOKEN"
+export KB_ADMIN_AUTH_TOKEN="$KB_AUTH_TOKEN"
 # Must contain http
 export KB_BASE_URL="https://ci.kbase.us/services/"
 
