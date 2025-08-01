@@ -26,7 +26,7 @@ def callback_ports():
     cb_good = Callback(ip="localhost", app_name="jr_good", allow_set_provenance=True)
     print("Starting cb good")
     cb_good.start_callback()
-    
+
     cb_bad = Callback(ip="localhost", app_name="jr_bad", allow_set_provenance=False)
     print("Starting cb bad")
     cb_bad.start_callback()
