@@ -30,11 +30,11 @@ def callback_ports():
     cb_bad = Callback(ip="localhost", app_name="jr_bad", allow_set_provenance=False)
     print("Starting cb bad")
     cb_bad.start_callback()
-    
+
     time.sleep(1)
-    
+
     yield cb_good.port, cb_bad.port
-    
+
     print("Stopping cb good")
     cb_good.stop()
     print("Stopping cb bad")
