@@ -58,7 +58,7 @@ jobs:
       env:
           KB_AUTH_TOKEN: ${{ secrets.KBASE_CI_TOKEN  }}
           KB_ADMIN_AUTH_TOKEN: ${{ secrets.KBASE_CI_TOKEN  }}
-          KB_BASE_URL: https://ci.kbase.us/services
+          KB_BASE_URL: https://ci.kbase.us/services/
       run: PYTHONPATH=. pytest -m "not online" --cov=JobRunner --cov-report=xml test
 
     - name: Upload coverage to Codecov

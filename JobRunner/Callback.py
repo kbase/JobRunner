@@ -9,11 +9,19 @@ from JobRunner.JobRunner import JobRunner
 
 
 class Callback():
-    def __init__(self):
+    def __init__(
+        self,
+        *,
+        ip: str = None,
+        app_name: str = None,
+        allow_set_provenance: bool = None
+    ):
         workdir = os.environ.get("JOB_DIR", '/tmp/')
         self.conf = Config(job_id="callback", workdir=workdir, use_ee2=False)
-        self.ip = os.environ.get('CALLBACK_IP') or get_ip()
+        self.ip = ip or os.environ.get('CALLBACK_IP') or get_ip()
         self.port = os.environ.get('CALLBACK_PORT')
+        self._allow_set_provenance = allow_set_provenance
+        self._app_name = app_name
         self.callback_url = None
 
     def load_prov(self, job_params_file):
@@ -31,6 +39,11 @@ class Callback():
             self.port = find_free_port()
         self.callback_url = f"http://{self.ip}:{self.port}"
         os.environ["SDK_CALLBACK_URL"] = self.callback_url
+        if self._allow_set_provenance is not None:
+            # if running in container mode, don't force an env var
+            os.environ["CALLBACK_ALLOW_SET_PROVENANCE"] = (
+                "true" if self._allow_set_provenance else "false"
+            )
         os.environ['CALLBACK_IP'] = self.ip
         job_params = None
         job_params_file = os.environ.get('PROV_FILE')
@@ -40,7 +53,7 @@ class Callback():
 
         try:
             self.jr = JobRunner(self.conf, port=self.port)
-            self.jr.callback(job_params=job_params)
+            self.jr.callback(job_params=job_params, app_name=self._app_name)
         except Exception as e:
             print("An unhandled error was encountered")
             print(e)

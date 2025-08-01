@@ -49,7 +49,7 @@ def test_index_post(app):
 
     assert "result" in response.json
     assert response.json["result"][0]["finished"] is 0
-    data = json.dumps({"method": "bogus.get_provenance"})
+    data = json.dumps({"method": "CallbackServer.get_provenance"})
     response = _post(app, data)
     assert "result" in response.json
     assert response.json["result"][0] in [None,[]]

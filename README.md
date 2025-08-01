@@ -88,8 +88,9 @@ Requirements:
 * `cromwell.conf` must exist in `$HOME`. It may be an empty file.
 * The env vars below must be set.
     * Required:
-        * The 2 auth token env vars (although they don't have to be a valid token)
-        * KB_BASE_URL - must start with http but otherwise can be anything
+        * The 2 auth token env vars. They must be set to a valid token that's compatible
+          with the base url.
+        * KB_BASE_URL
     * Required for MacOS:
         * JOB_DIR, since otherwise the tests attempt to mount /tmp
     * Optional:
@@ -116,6 +117,8 @@ make test
 ```
 
 There is a script at [run_tests.sh](./run_tests.sh) that can help make this process simpler.
+Note that prior to running the script, you must set the KB_AUTH_TOKEN env var to a valid
+KBase auth token for the base url.
 
 ## Using the CallBack Server 
 * Install a kb-sdk module such as DataFileUtil using `kb-sdk install` or copying from an existing apps `lib/installed_clients` directory

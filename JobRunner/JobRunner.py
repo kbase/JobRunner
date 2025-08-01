@@ -200,6 +200,11 @@ class JobRunner(object):
                     else:
                         self._submit(config=config, job_id=req[1], job_params=req[2])
                     ct += 1
+                elif req[0] == "set_provenance":
+                    # Ok, we're syncing provenance in 2 different places by sending messages
+                    # on 2 different queues. I think there may be design issues here
+                    self.prov = req[2]
+                    self.callback_queue.put(["prov", None, self.prov.get_prov()])
                 elif req[0] == "finished_special":
                     job_id = req[1]
                     self.callback_queue.put(["output", job_id, req[2]])
@@ -409,7 +414,7 @@ class JobRunner(object):
         #  subjob container ids
         # Run a job shutdown hook
 
-    def callback(self, job_params=None):
+    def callback(self, job_params=None, app_name=None):
         """
         This method just does the minimal steps to run the call back server.
         """
@@ -460,6 +465,8 @@ class JobRunner(object):
             self.bypass_token,
         ]
         kwargs = {"shutdown_event": self._shutdown_event}
+        if app_name:
+            kwargs["app_name"] = app_name  # don't add if None
         self.cbs = Process(target=start_callback_server, args=cb_args, kwargs=kwargs)
         self.cbs.start()
         self._watch_thread = threading.Thread(target=self._watch, args=[config])
