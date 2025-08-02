@@ -178,6 +178,8 @@ class JobRunner(object):
     def _watch(self, config: dict) -> dict:
         # Run a thread to check for expired token
         # Run a thread for 7 day max job runtime
+        # TODO in callback server mode (e.g. Sanic) if this loop exits the server
+        # hangs forever. Needs to be reworked so that doesn't happen, which seems like a big lift
         ct = 1
         exp_time = self._get_token_lifetime() - 600
         while not self._stop:
@@ -463,6 +465,7 @@ class JobRunner(object):
             self.callback_queue,
             self.token,
             self.bypass_token,
+            self.cc,
         ]
         kwargs = {"shutdown_event": self._shutdown_event}
         if app_name:

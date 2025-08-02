@@ -14,10 +14,18 @@ class Callback():
         *,
         ip: str = None,
         app_name: str = None,
-        allow_set_provenance: bool = None
+        allow_set_provenance: bool = None,
+        # for running tests in GHA, where some tests need an admin token set apparently,
+        # but GHA creds don't have admin perms
+        ignore_admin_token: bool = False,
     ):
         workdir = os.environ.get("JOB_DIR", '/tmp/')
-        self.conf = Config(job_id="callback", workdir=workdir, use_ee2=False)
+        self.conf = Config(
+            job_id="callback",
+            workdir=workdir,
+            use_ee2=False,
+            ignore_admin_token=ignore_admin_token
+        )
         self.ip = ip or os.environ.get('CALLBACK_IP') or get_ip()
         self.port = os.environ.get('CALLBACK_PORT')
         self._allow_set_provenance = allow_set_provenance

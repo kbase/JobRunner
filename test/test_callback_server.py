@@ -3,9 +3,10 @@
 import json
 import pytest
 from queue import Queue
-from unittest.mock import patch
+from unittest.mock import patch, create_autospec
 
 from JobRunner.callback_server import create_app
+from JobRunner.CatalogCache import CatalogCache
 
 _TOKEN = "bogus"
 
@@ -36,7 +37,9 @@ def test_index_post_empty(app):
 def test_index_post(app):
     out_q = Queue()
     in_q = Queue()
-    conf = {"token": _TOKEN, "out_q": out_q, "in_q": in_q}
+    # just make the cache do nothing when called so the submit call works
+    cc = create_autospec(CatalogCache, spec_set=True, instance=True)
+    conf = {"token": _TOKEN, "out_q": out_q, "in_q": in_q, "catcache": cc}
     app.config.update(conf)
     data = json.dumps({"method": "bogus._test_submit"})
     response = _post(app, data)
