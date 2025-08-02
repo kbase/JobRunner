@@ -256,7 +256,7 @@ def test_submit_fail_module_lookup_async(callback_ports):
         "params": ["JobRunner_test_public_ws"],
     })
     j = resp.json()
-    # ensure the catalog service trace is included. 
+    # ensure the catalog service trace is included.
     assert "biokbase/catalog/controller.py" in j["error"]["error"]
     assert "JobRunner/callback_server.py" in j["error"]["error"]
     del j["error"]["error"]
@@ -275,7 +275,7 @@ def test_submit_fail_module_lookup_service_ver_sync(callback_ports):
         "service_ver": "fake"
     })
     j = resp.json()
-    # ensure the catalog service trace is included. 
+    # ensure the catalog service trace is included.
     assert "biokbase/catalog/Impl.py" in j["error"]["error"]
     assert "JobRunner/callback_server.py" in j["error"]["error"]
     del j["error"]["error"]
