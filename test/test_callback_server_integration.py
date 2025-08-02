@@ -212,27 +212,30 @@ def test_callback_method_fail_no_method(callback_ports):
 def test_submit_job_sync(callback_ports):
     port = callback_ports[0]
 
-    # Note this will only pass on CI. I don't see any reasonable way to test a job
-    # without binding it to an environment
-    # Actually we could define the ws name and ID in a test config. YAGNI for now
     resp = _post(port, {
-        "method": "DataFileUtil.ws_name_to_id",
-        "params": ["JobRunner_test_public_ws"],
+        "method": "njs_sdk_test_1.run",
+        "params": [{"id": "whee"}],
         "context": {"service_ver": "dev"}
     })
     j = resp.json()
-    assert j == {"result": [80149], "finished": 1, "id": "callback", "version": "1.1"}
+    assert j == {
+        "result": [{
+            "hash": "366eb8cead445aa3e842cbc619082a075b0da322",
+            "id": "whee",
+            "name": "njs_sdk_test_1"
+        }],
+        "finished": 1,
+        "id": "callback",
+        "version": "1.1"
+    }
 
 
 def test_submit_job_async(callback_ports):
     port = callback_ports[0]
 
-    # Note this will only pass on CI. I don't see any reasonable way to test a job
-    # without binding it to an environment
-    # Actually we could define the ws name and ID in a test config. YAGNI for now
     resp = _post(port, {
-        "method": "DataFileUtil._ws_name_to_id_submit",
-        "params": ["JobRunner_test_public_ws"],
+        "method": "njs_sdk_test_1._run_submit",
+        "params": [{"id": "godiloveasynchrony"}],
     })
     j = resp.json()
     job_id = j["result"][0]
@@ -244,9 +247,16 @@ def test_submit_job_async(callback_ports):
             "params": [job_id]
         })
         res = resp.json()
-    assert res == {"result": [
-        {"version": "1.1", "result": [80149], "id": "callback", "finished": 1}
-    ]}
+    assert res == {"result": [{
+        "result": [{
+            "hash": "366eb8cead445aa3e842cbc619082a075b0da322",
+            "id": "godiloveasynchrony",
+            "name": "njs_sdk_test_1"
+        }],
+        "finished": 1,
+        "id": "callback",
+        "version": "1.1"
+    }]}
 
 
 def test_submit_fail_module_lookup_async(callback_ports):
