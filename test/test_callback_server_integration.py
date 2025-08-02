@@ -211,7 +211,7 @@ def test_callback_method_fail_no_method(callback_ports):
 
 def test_submit_job_sync(callback_ports):
     port = callback_ports[0]
-    
+
     # Note this will only pass on CI. I don't see any reasonable way to test a job
     # without binding it to an environment
     # Actually we could define the ws name and ID in a test config. YAGNI for now
@@ -226,7 +226,7 @@ def test_submit_job_sync(callback_ports):
 
 def test_submit_job_async(callback_ports):
     port = callback_ports[0]
-    
+
     # Note this will only pass on CI. I don't see any reasonable way to test a job
     # without binding it to an environment
     # Actually we could define the ws name and ID in a test config. YAGNI for now
