@@ -98,6 +98,8 @@ def _check_finished(app, info=None):
 
 
 def _check_rpc_token(app, token):
+    # We should just use the passed in token from the call
+    # Would that break apps?
     if token != app.config.get("token"):
         if app.config.get("bypass_token"):
             pass

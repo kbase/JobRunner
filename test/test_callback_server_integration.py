@@ -23,11 +23,15 @@ _TOKEN = os.environ["KB_AUTH_TOKEN"]
 
 @pytest.fixture(scope="module")
 def callback_ports():
-    cb_good = Callback(ip="localhost", app_name="jr_good", allow_set_provenance=True)
+    cb_good = Callback(
+        ip="localhost", app_name="jr_good", allow_set_provenance=True, ignore_admin_token=True
+    )
     print("Starting cb good")
     cb_good.start_callback()
 
-    cb_bad = Callback(ip="localhost", app_name="jr_bad", allow_set_provenance=False)
+    cb_bad = Callback(
+        ip="localhost", app_name="jr_bad", allow_set_provenance=False, ignore_admin_token=True
+    )
     print("Starting cb bad")
     cb_bad.start_callback()
 
