@@ -22,8 +22,8 @@ def _get_token():
     return token
 
 
-def _get_admin_token(ignore_admin_token: bool = False):
-    if ignore_admin_token or _ADMIN_TOKEN_ENV not in os.environ:
+def _get_admin_token():
+    if _ADMIN_TOKEN_ENV not in os.environ:
         return None
     # We pop the token so it isn't exposed later
     admin_token = os.environ.pop("KB_ADMIN_AUTH_TOKEN")
@@ -33,14 +33,7 @@ def _get_admin_token(ignore_admin_token: bool = False):
 
 
 class Config:
-    def __init__(
-        self,
-        workdir=None,
-        base_url=None,
-        job_id=None,
-        use_ee2=True,
-        ignore_admin_token: bool = False
-    ):
+    def __init__(self, workdir=None, base_url=None, job_id=None, use_ee2=True):
         self.job_id = job_id
         self.base_url = os.environ.get(_KB_BASE_URL, "https://ci.kbase.us/services/")
         self.ee2_url = None
@@ -62,7 +55,7 @@ class Config:
         self.runtime = os.environ.get("RUNTIME", "docker")
         self.max_tasks = int(os.environ.get("JR_MAX_TASKS", "10"))
         self.token = _get_token()
-        self.admin_token = _get_admin_token(ignore_admin_token)
+        self.admin_token = _get_admin_token()
         if _DEBUG_ENVNAME in os.environ and os.environ[_DEBUG_ENVNAME].lower() == "true":
             self.debug = True
         self.hostname = gethostname()

@@ -57,7 +57,6 @@ class JobRunnerTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.token = os.environ.get("KB_AUTH_TOKEN", "")
-        cls.admin_token = os.environ.get("KB_ADMIN_AUTH_TOKEN", "bogus")
         base = "https://ci.kbase.us/services/"
         if "TEST_URL" in os.environ:
             base = "http://%s/services/" % (os.environ["TEST_URL"])
