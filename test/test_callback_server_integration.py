@@ -100,7 +100,7 @@ def test_get_set_provenance_provenance_action_style(callback_ports):
                     "name": "legitmodule",
                     "ver": "1.2.3",
                     "code_url": "https://github.com/kbase/legitmodule.git",
-                    "commit": "thisistaotallyalegitgithuash",
+                    "commit": "thisistotallyalegitgithash",
                 }],
                 "description": "myprov",
             }]
@@ -118,7 +118,7 @@ def test_get_set_provenance_provenance_action_style(callback_ports):
             "name": "legitmodule",
             "ver": "1.2.3",
             "code_url": "https://github.com/kbase/legitmodule.git",
-            "commit": "thisistaotallyalegitgithuash",
+            "commit": "thisistotallyalegitgithash",
         }],
         "description": "myprov",
     }]]}
@@ -149,7 +149,6 @@ def test_set_provenance_fail_disabled(callback_ports):
     assert j == {
         "error": {
             "code": -32000,
-            "error": "Setting provenance is not enabled",
             "message": "Setting provenance is not enabled",
         },
     }
@@ -164,7 +163,6 @@ def test_set_provenance_fail_no_params(callback_ports):
     assert j == {
         "error": {
             "code": -32000,
-            "error": err,
             "message": err,
         },
     }
@@ -189,21 +187,106 @@ def test_set_provenance_fail_bad_params(callback_ports):
         assert j == {
             "error": {
                 "code": -32000,
-                "error": err,
                 "message": err,
             },
         }
 
 
 def test_callback_method_fail_no_method(callback_ports):
-    port = callback_ports[1]
+    port = callback_ports[0]
 
     resp = _post(port, {"method": "CallbackServer.no_method"})
     j = resp.json()
     assert j == {
         "error": {
             "code": -32601,
-            "error": "No such CallbackServer method: no_method",
             "message": "No such CallbackServer method: no_method",
         },
     }
+
+
+def test_submit_job_sync(callback_ports):
+    port = callback_ports[0]
+
+    resp = _post(port, {
+        "method": "njs_sdk_test_1.run",
+        "params": [{"id": "whee"}],
+        "context": {"service_ver": "dev"}
+    })
+    j = resp.json()
+    assert j == {
+        "result": [{
+            "hash": "366eb8cead445aa3e842cbc619082a075b0da322",
+            "id": "whee",
+            "name": "njs_sdk_test_1"
+        }],
+        "finished": 1,
+        "id": "callback",
+        "version": "1.1"
+    }
+
+
+def test_submit_job_async(callback_ports):
+    port = callback_ports[0]
+
+    resp = _post(port, {
+        "method": "njs_sdk_test_1._run_submit",
+        "params": [{"id": "godiloveasynchrony"}],
+    })
+    j = resp.json()
+    job_id = j["result"][0]
+    res = {"result": [{"finished": 0}]}
+    while not res["result"][0]["finished"]:
+        time.sleep(.5)
+        resp = _post(port, {
+            "method": "CallbackServer._check_job",
+            "params": [job_id]
+        })
+        res = resp.json()
+    assert res == {"result": [{
+        "result": [{
+            "hash": "366eb8cead445aa3e842cbc619082a075b0da322",
+            "id": "godiloveasynchrony",
+            "name": "njs_sdk_test_1"
+        }],
+        "finished": 1,
+        "id": "callback",
+        "version": "1.1"
+    }]}
+
+
+def test_submit_fail_module_lookup_async(callback_ports):
+    port = callback_ports[0]
+    resp = _post(port, {
+        "method": "DataFileUtilFake._ws_name_to_id_submit",
+        "params": ["JobRunner_test_public_ws"],
+    })
+    j = resp.json()
+    # ensure the catalog service trace is included.
+    assert "biokbase/catalog/controller.py" in j["error"]["error"]
+    assert "JobRunner/callback_server.py" in j["error"]["error"]
+    del j["error"]["error"]
+    assert j == {"error": {
+        "code": -32000,
+        "message": "Error looking up module DataFileUtilFake with version None: "
+            + "'Module cannot be found based on module_name or git_url parameters.'",
+    }}
+
+
+def test_submit_fail_module_lookup_service_ver_sync(callback_ports):
+    port = callback_ports[0]
+    resp = _post(port, {
+        "method": "KBaseReport.create",
+        "params": ["JobRunner_test_public_ws"],
+        "service_ver": "fake"
+    })
+    j = resp.json()
+    # ensure the catalog service trace is included.
+    assert "biokbase/catalog/Impl.py" in j["error"]["error"]
+    assert "JobRunner/callback_server.py" in j["error"]["error"]
+    del j["error"]["error"]
+    assert j == {"error": {
+        "code": -32000,
+        "message": "Error looking up module KBaseReport with version fake: "
+            + "'No module version found that matches your criteria!'",
+    }}

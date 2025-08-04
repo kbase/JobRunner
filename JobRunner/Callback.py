@@ -14,7 +14,7 @@ class Callback():
         *,
         ip: str = None,
         app_name: str = None,
-        allow_set_provenance: bool = None
+        allow_set_provenance: bool = None,
     ):
         workdir = os.environ.get("JOB_DIR", '/tmp/')
         self.conf = Config(job_id="callback", workdir=workdir, use_ee2=False)

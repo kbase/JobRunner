@@ -88,7 +88,7 @@ Requirements:
 * `cromwell.conf` must exist in `$HOME`. It may be an empty file.
 * The env vars below must be set.
     * Required:
-        * The 2 auth token env vars. They must be set to a valid token that's compatible
+        * The auth token env var. It must be set to a valid token that's compatible
           with the base url.
         * KB_BASE_URL
     * Required for MacOS:
@@ -103,9 +103,8 @@ uv sync --dev  # only the first time or when uv.lock changes
 # Set the DOCKER_HOST if this doesn't work out of the box
 export DOCKER_HOST=unix://$HOME/.docker/run/docker.sock
 
-# Be sure to set both tokens and the KB_BASE_URL. Other variables are optional.
+# Be sure to set the token and the KB_BASE_URL. Other variables are optional.
 export KB_AUTH_TOKEN="xxxxxxxxx"
-export KB_ADMIN_AUTH_TOKEN="xxxxxxxxxxxx"
 export KB_BASE_URL=https://ci.kbase.us/services/
 # Set ref data and job dir to areas accessible by Docker
 export KB_REF_DATA=/path/to/local/refdata

@@ -22,7 +22,6 @@ touch "$HOME"/cromwell.conf
 
 # These must be a valid KBase authentication token for the base url
 export KB_AUTH_TOKEN="$KB_AUTH_TOKEN"
-export KB_ADMIN_AUTH_TOKEN="$KB_AUTH_TOKEN"
 # Must contain http
 export KB_BASE_URL="https://ci.kbase.us/services/"
 

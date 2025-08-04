@@ -11,6 +11,8 @@ from sanic.exceptions import SanicException
 from sanic.log import logger
 from sanic.response import json
 
+from clients.baseclient import ServerError
+from JobRunner.CatalogCache import CatalogCache
 from .provenance import Provenance
 
 Config.SANIC_REQUEST_TIMEOUT = 300
@@ -44,7 +46,7 @@ def create_app(app_name: str = "jobrunner", shutdown_event: multiprocessing.Even
         except Exception as e:
             stack = traceback.format_exc()
             print(f"Exception when processing jsonrpc: {e}\n: {stack}")
-            return json(_error("Unexpected error"), status=500)
+            return json(_error("Unexpected error", trace=stack), status=500)
     return app
 
 
@@ -55,6 +57,7 @@ def start_callback_server(
         in_queue,
         token,
         bypass_token,
+        cc: CatalogCache,
         app_name: str = "jobrunner",
         shutdown_event: multiprocessing.Event = None
     ):
@@ -69,6 +72,7 @@ def start_callback_server(
         "REQUEST_TIMEOUT": timeout,
         "KEEP_ALIVE_TIMEOUT": timeout,
         "REQUEST_MAX_SIZE": max_size_bytes,
+        "catcache": cc,
     }
     app = create_app(app_name=app_name, shutdown_event=shutdown_event)
     app.config.update(conf)
@@ -94,6 +98,8 @@ def _check_finished(app, info=None):
 
 
 def _check_rpc_token(app, token):
+    # We should just use the passed in token from the call
+    # Would that break apps?
     if token != app.config.get("token"):
         if app.config.get("bypass_token"):
             pass
@@ -121,7 +127,29 @@ def _handle_set_provenance(app, data):
     return {"result": [prov.get_prov()]}
 
 
+def _check_module_lookup(app, module, data):
+    # check errors before submitting to the queue, otherwise the watch loop dies and the
+    # server hangs. This needs to be rewritten to remove the queues and architect the server
+    # to work the same way as the old Java server
+    service_ver = data.get("service_ver")
+    if service_ver is None:
+        service_ver = data.get("context", {}).get("service_ver")
+    err = f"Error looking up module {module} with version {service_ver}: "
+    try:
+        app.config["catcache"].get_module_info(module, service_ver)
+    except ServerError as e:
+        return _error(err + e.message, trace=f"{traceback.format_exc()}\n{e.data}")
+    except Exception as e:  # Dunno how to test this
+        return _error(err + str(e), trace=traceback.format_exc())
+    return None
+
+
 def _handle_submit(app, module, method, data, token):
+    # Validate the module and version using the CatalogCache before submitting the job.
+    # If there is an error with the module lookup, return the error response immediately.
+    if err := _check_module_lookup(app, module, data):
+        return err
+
     _check_rpc_token(app, token)
     job_id = str(uuid.uuid1())
     data["method"] = "%s.%s" % (module, method[1:-7])
@@ -129,8 +157,11 @@ def _handle_submit(app, module, method, data, token):
     return {"result": [job_id]}
 
 
-def _error(errstr, code=-32000):
-    return {"error": {"error": errstr, "message": errstr, "code": code}}
+def _error(errstr, trace=None, code=-32000):
+    err = {"message": errstr, "code": code}
+    if trace:
+        err["error"] = trace
+    return {"error": err}
 
 
 def _handle_checkjob(app, data):
@@ -173,7 +204,12 @@ async def _process_rpc(app, data, token):
         # https://www.jsonrpc.org/specification#error_object
         return _error(f"No such CallbackServer method: {method}", code=-32601)
     else:
+        # Does this even happen any more?
         # Sync Job
+        # Validate the module and version using the CatalogCache before submitting the job.
+        # If there is an error with the module lookup, return the error response immediately.
+        if err := _check_module_lookup(app, module, data):
+            return err
         _check_rpc_token(app, token)
         job_id = str(uuid.uuid1())
         data["method"] = "%s.%s" % (module, method)
