@@ -100,7 +100,7 @@ def test_get_set_provenance_provenance_action_style(callback_ports):
                     "name": "legitmodule",
                     "ver": "1.2.3",
                     "code_url": "https://github.com/kbase/legitmodule.git",
-                    "commit": "thisistotallyalegitgithuash",
+                    "commit": "thisistotallyalegitgithash",
                 }],
                 "description": "myprov",
             }]
@@ -118,7 +118,7 @@ def test_get_set_provenance_provenance_action_style(callback_ports):
             "name": "legitmodule",
             "ver": "1.2.3",
             "code_url": "https://github.com/kbase/legitmodule.git",
-            "commit": "thisistotallyalegitgithuash",
+            "commit": "thisistotallyalegitgithash",
         }],
         "description": "myprov",
     }]]}

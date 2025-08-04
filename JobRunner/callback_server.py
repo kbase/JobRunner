@@ -145,8 +145,10 @@ def _check_module_lookup(app, module, data):
 
 
 def _handle_submit(app, module, method, data, token):
-    if ret := _check_module_lookup(app, module, data):
-        return ret
+    # Validate the module and version using the CatalogCache before submitting the job.
+    # If there is an error with the module lookup, return the error response immediately.
+    if err := _check_module_lookup(app, module, data):
+        return err
 
     _check_rpc_token(app, token)
     job_id = str(uuid.uuid1())
@@ -204,8 +206,10 @@ async def _process_rpc(app, data, token):
     else:
         # Does this even happen any more?
         # Sync Job
-        if ret := _check_module_lookup(app, module, data):
-            return ret
+        # Validate the module and version using the CatalogCache before submitting the job.
+        # If there is an error with the module lookup, return the error response immediately.
+        if err := _check_module_lookup(app, module, data):
+            return err
         _check_rpc_token(app, token)
         job_id = str(uuid.uuid1())
         data["method"] = "%s.%s" % (module, method)
