@@ -3,6 +3,7 @@ import json
 import os
 import requests
 import socket
+from typing import Union
 
 from JobRunner.config import Config
 from JobRunner.JobRunner import JobRunner
@@ -15,9 +16,10 @@ class Callback():
         ip: str = None,
         app_name: str = None,
         allow_set_provenance: bool = None,
+        max_tasks: Union[int, None] = None,
     ):
         workdir = os.environ.get("JOB_DIR", '/tmp/')
-        self.conf = Config(job_id="callback", workdir=workdir, use_ee2=False)
+        self.conf = Config(job_id="callback", workdir=workdir, use_ee2=False, max_tasks=max_tasks)
         self.ip = ip or os.environ.get('CALLBACK_IP') or get_ip()
         self.port = os.environ.get('CALLBACK_PORT')
         self._allow_set_provenance = allow_set_provenance

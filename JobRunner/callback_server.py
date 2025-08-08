@@ -17,6 +17,23 @@ from .provenance import Provenance
 
 Config.SANIC_REQUEST_TIMEOUT = 300
 
+# NOTES FOR FUTURE DEVS
+
+# Sanic is a single threaded async server, and the app.run() call below starts a single worker.
+# That means there's a single thread servicing all requests, which is fine, since an
+# instance of the callback server should not be getting more than a few requests a second.
+
+# The only async sections of the code as of this writing are the root method itself and
+# the asyncio.sleep() call in the synchronous job checking code.
+
+# What this means is that it's safe to keep a counter of the number of jobs running without
+# a synchronization block in the form of a lock or semaphore since it's impossible for the counter
+# to be incremented without a job being put on the queue or decremented without a job being
+# removed from the queue.
+
+# However if the Sanic configuration above changes, then you may have to rethink how job count
+# tracking works.
+
 
 # may need to put these in the app.config too?
 outputs = dict()
@@ -59,7 +76,8 @@ def start_callback_server(
         bypass_token,
         cc: CatalogCache,
         app_name: str = "jobrunner",
-        shutdown_event: multiprocessing.Event = None
+        shutdown_event: multiprocessing.Event = None,
+        max_tasks: int = 10,
     ):
     timeout = 3600
     max_size_bytes = 100000000000
@@ -73,11 +91,15 @@ def start_callback_server(
         "KEEP_ALIVE_TIMEOUT": timeout,
         "REQUEST_MAX_SIZE": max_size_bytes,
         "catcache": cc,
+        "jobcount": 0,
+        "maxjobs": max_tasks,
     }
     app = create_app(app_name=app_name, shutdown_event=shutdown_event)
     app.config.update(conf)
     if os.environ.get("IN_CONTAINER"):
         ip = "0.0.0.0"
+    # JobRunner starts a new process to call this method, but app.run() also starts a new
+    # process. Might be redundant and a thread might work fine, since this blocks.
     app.run(host=ip, port=port, debug=False, access_log=False, motd=False)
 
 
@@ -91,6 +113,11 @@ def _check_finished(app, info=None):
             [mtype, fjob_id, output] = in_q.get(block=False)
             if mtype == "output":
                 outputs[fjob_id] = output
+                app.config["jobcount"] -= 1
+                if app.config["jobcount"] < 0:
+                    raise ValueError(  # should never happen
+                        "There's a programming error here, job count should never be < 0"
+                    )
             elif mtype == "prov":
                 prov = output
     except Empty:
@@ -145,20 +172,25 @@ def _check_module_lookup(app, module, data):
 
 
 def _handle_submit(app, module, method, data, token):
+    if app.config["jobcount"] >= app.config["maxjobs"]:
+        return _error(
+            f"No more than {app.config['maxjobs']} concurrently running methods are allowed"
+        )
     # Validate the module and version using the CatalogCache before submitting the job.
     # If there is an error with the module lookup, return the error response immediately.
     if err := _check_module_lookup(app, module, data):
         return err
 
     _check_rpc_token(app, token)
-    job_id = str(uuid.uuid1())
-    data["method"] = "%s.%s" % (module, method[1:-7])
+    job_id = str(uuid.uuid4())
+    data["method"] = "%s.%s" % (module, method)
     app.config["out_q"].put(["submit", job_id, data])
+    app.config["jobcount"] += 1
     return {"result": [job_id]}
 
 
 def _error(errstr, trace=None, code=-32000):
-    err = {"message": errstr, "code": code}
+    err = {"message": errstr, "code": code, "name": "CallbackServerError"}
     if trace:
         err["error"] = trace
     return {"error": err}
@@ -174,11 +206,8 @@ def _handle_checkjob(app, data):
     if job_id in outputs:
         resp = outputs[job_id]
         resp["finished"] = 1
-        try:
-            if "error" in resp:
-                return resp
-        except Exception as e:
-            logger.debug(e)
+        if "error" in resp:
+            return resp
 
     return {"result": [resp]}
 
@@ -188,9 +217,13 @@ async def _process_rpc(app, data, token):
     Handle KBase SDK App Client Requests
     """
 
-    (module, method) = data["method"].split(".")
+    parts = data["method"].split(".")
+    if len(parts) != 2:
+        return _error(f"Illegal method name: {data['method']}")
+    module, method = parts
     # async submit job
     if method.startswith("_") and method.endswith("_submit"):
+        method = method[1:-7]
         return _handle_submit(app, module, method, data, token)
     # check job
     elif method.startswith("_check_job"):
@@ -206,14 +239,10 @@ async def _process_rpc(app, data, token):
     else:
         # Does this even happen any more?
         # Sync Job
-        # Validate the module and version using the CatalogCache before submitting the job.
-        # If there is an error with the module lookup, return the error response immediately.
-        if err := _check_module_lookup(app, module, data):
-            return err
-        _check_rpc_token(app, token)
-        job_id = str(uuid.uuid1())
-        data["method"] = "%s.%s" % (module, method)
-        app.config["out_q"].put(["submit", job_id, data])
+        ret = _handle_submit(app, module, method, data, token)
+        if "error" in ret:
+            return ret
+        job_id = ret["result"][0]
         try:
             while True:
                 _check_finished(app, f'synk check for {data["method"]} for {job_id}')
@@ -230,6 +259,7 @@ async def _process_rpc(app, data, token):
                 "error": exception_message,
                 "code": "123",
                 "message": exception_message,
+                "name": "CallbackServerError", 
             }
             outputs[job_id] = {
                 "result": exception_message,
