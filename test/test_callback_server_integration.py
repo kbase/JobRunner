@@ -297,9 +297,9 @@ def test_submit_job_async(callback_ports):
 
 def test_submit_fail_bad_method_names(callback_ports):
     port = callback_ports[0]
-    
+
     badnames = ["DataFileUtilws_name_to_id", "DataFileUtil.ws_name_to_id.run"]
-    
+
     for bn in badnames:
         resp = _post(port, {
             "method": bn,
@@ -350,6 +350,7 @@ def test_submit_fail_module_lookup_service_ver_sync(callback_ports):
         "message": "Error looking up module KBaseReport with version fake: "
             + "'No module version found that matches your criteria!'",
     }}
+
 
 def test_submit_fail_max_jobs_limit(callback_ports):
     port = callback_ports[0]
