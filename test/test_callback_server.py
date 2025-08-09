@@ -46,7 +46,6 @@ def test_index_post(app):
         "catcache": cc,
         "jobcount": 0,
         "maxjobs": 10,
-        
     }
     app.config.update(conf)
     data = json.dumps({"method": "bogus._test_submit"})
@@ -89,7 +88,6 @@ def test_index_submit_sync(mock_uuid, app):
         "catcache": cc,
         "jobcount": 0,
         "maxjobs": 10,
-        
     }
     app.config.update(conf)
     mock_uuid.uuid4.return_value = "bogus"

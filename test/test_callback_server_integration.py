@@ -55,7 +55,7 @@ def callback_ports():
     db_old = _set_env_true("DEBUG_RUNNER")
     # make the server bind to 0.0.0.0 but keep the provided ip for the SDK_CALLBACK_URl
     ic_old = _set_env_true("IN_CONTAINER")
-    
+
     cb_good = Callback(ip=ip, app_name="jr_good", allow_set_provenance=True, max_tasks=3)
     print("Starting cb good")
     cb_good.start_callback()
@@ -67,7 +67,7 @@ def callback_ports():
     time.sleep(1)
 
     yield cb_good.port, cb_bad.port
-    
+
     _restore_env("DEBUG_RUNNER", db_old)
     _restore_env("IN_CONTAINER", ic_old)
 
@@ -311,7 +311,6 @@ def test_submit_fail_bad_method_names(callback_ports):
             "name": "CallbackServerError",
             "message": f"Illegal method name: {bn}",
         }}
-    
 
 
 def test_submit_fail_module_lookup_async(callback_ports):
@@ -354,7 +353,7 @@ def test_submit_fail_module_lookup_service_ver_sync(callback_ports):
 
 def test_submit_fail_max_jobs_limit(callback_ports):
     port = callback_ports[0]
-    
+
     jobs = [
         {
             "method": "njs_sdk_test_1.run",
@@ -367,7 +366,7 @@ def test_submit_fail_max_jobs_limit(callback_ports):
             "params": [{"id": "child2", "wait": 3}]
         },
     ]
-    
+
     resp = _post(port, {
         "method": "njs_sdk_test_1.run",
         "params": [{"id": "parent", "wait": 1, "run_jobs_async": True, "jobs": jobs}]
@@ -421,4 +420,3 @@ def test_submit_fail_max_jobs_limit(callback_ports):
        "id": "callback",
        "version": "1.1"
     }
-
