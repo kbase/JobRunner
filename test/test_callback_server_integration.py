@@ -296,6 +296,22 @@ def test_submit_job_async(callback_ports):
     }]}
 
 
+def test_submit_job_default_service_ver(callback_ports):
+    port = callback_ports[0]
+
+    resp = _post(port, {
+        "method": "HelloServiceDeluxe.say_hello",
+        "params": ["I'm not your buddy, pal"],
+    })
+    j = resp.json()
+    assert j == {
+        "version": "1.1",
+        "result": ["Hello, I'm not your buddy, pal. I am a service."],
+        "id": "callback",
+        "finished": 1
+    }
+
+
 def test_submit_fail_bad_method_names(callback_ports):
     port = callback_ports[0]
 
@@ -319,6 +335,7 @@ def test_submit_fail_module_lookup_async(callback_ports):
     resp = _post(port, {
         "method": "DataFileUtilFake._ws_name_to_id_submit",
         "params": ["JobRunner_test_public_ws"],
+        "service_ver": "beta"
     })
     j = resp.json()
     # ensure the catalog service trace is included.
@@ -328,7 +345,7 @@ def test_submit_fail_module_lookup_async(callback_ports):
     assert j == {"error": {
         "code": -32000,
         "name": "CallbackServerError",
-        "message": "Error looking up module DataFileUtilFake with version None: "
+        "message": "Error looking up module DataFileUtilFake with version beta: "
             + "'Module cannot be found based on module_name or git_url parameters.'",
     }}
 
@@ -352,6 +369,24 @@ def test_submit_fail_module_lookup_service_ver_sync(callback_ports):
             + "'No module version found that matches your criteria!'",
     }}
 
+
+def test_submit_fail_default_service_ver_sync(callback_ports):
+    port = callback_ports[0]
+    resp = _post(port, {
+        "method": "njs_sdk_test_3.run",
+        "params": [{"id": "godiloveasynchrony"}],
+    })
+    j = resp.json()
+    # ensure the catalog service trace is included.
+    assert "biokbase/catalog/Impl.py" in j["error"]["error"]
+    assert "JobRunner/callback_server.py" in j["error"]["error"]
+    del j["error"]["error"]
+    assert j == {"error": {
+        "code": -32000,
+        "name": "CallbackServerError",
+        "message": "Error looking up module njs_sdk_test_3 with version release: "
+            + "'No module version found that matches your criteria!'",
+    }}
 
 def test_submit_job_fail_too_old_image(callback_ports):
     # This image was built such a long time ago modern versions of docker refuse to run it.
