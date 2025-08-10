@@ -259,7 +259,7 @@ async def _process_rpc(app, data, token):
                 "error": exception_message,
                 "code": "123",
                 "message": exception_message,
-                "name": "CallbackServerError", 
+                "name": "CallbackServerError",
             }
             outputs[job_id] = {
                 "result": exception_message,

@@ -54,7 +54,7 @@ class Callback():
             job_params = self.load_prov(job_params_file)
 
         try:
-            self.jr = JobRunner(self.conf, port=self.port)
+            self.jr = JobRunner(self.conf, port=self.port, server_mode=True)
             self.jr.callback(job_params=job_params, app_name=self._app_name)
         except Exception as e:
             print("An unhandled error was encountered")
