@@ -275,7 +275,7 @@ def test_submit_job_sync_and_provenance(callback_ports):
         "version": "1.1"
     }
 
-    resp = _post(port, {"method":"CallbackServer.get_provenance"})
+    resp = _post(port, {"method": "CallbackServer.get_provenance"})
     j = resp.json()
     del j["result"][0][0]["time"]  # changes from run to run
     assert j == {'result': [[{
