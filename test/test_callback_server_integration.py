@@ -8,11 +8,12 @@ As such, if you submit a job, it will run fully, so you may not want to do that.
 import os
 import pytest
 import requests
+import socket
 import time
 from typing import Any
+import uuid
 
 from JobRunner.Callback import Callback
-import socket
 
 # NOTE - the CBS is started once for this module. Don't assume it has any particular provenance
 # stored.
@@ -509,3 +510,46 @@ def test_submit_fail_max_jobs_limit(callback_ports):
        "id": "callback",
        "version": "1.1"
     }
+
+
+def test_check_job_fail_no_params(callback_ports):
+    port = callback_ports[0]
+    err = "method params must be a list containing exactly one job ID string"
+
+    resp = _post(port, {"method": "foo._check_job"})
+    j = resp.json()
+    assert j == {
+        "error": {
+            "code": -32000,
+            "name": "CallbackServerError",
+            "message": err,
+        },
+    }
+
+
+def test_check_job_fail_bad_params(callback_ports):
+    port = callback_ports[0]
+    err = "method params must be a list containing exactly one job ID string"
+    randomuuid = str(uuid.uuid4())
+
+    testset = [
+        (None, err),
+        ({}, err),
+        ("foo", err),
+        ([], err),
+        (["foo", "bar"], err),
+        ([[]], err),
+        ([{}], err),
+        ([randomuuid], f"No such job ID: {randomuuid}"),
+        ([randomuuid + "g"], f"Invalid job ID: {randomuuid}g"),
+    ]
+    for t, e in testset:
+        resp = _post(port, {"method": "foo._check_job", "params": t})
+        j = resp.json()
+        assert j == {
+            "error": {
+                "code": -32000,
+                "name": "CallbackServerError",
+                "message": e,
+            },
+        }
