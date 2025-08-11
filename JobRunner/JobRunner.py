@@ -7,6 +7,7 @@ import signal
 import socket
 import threading
 from time import sleep as _sleep, time as _time
+import traceback
 
 from clients.authclient import KBaseAuth
 from clients.CatalogClient import Catalog
@@ -36,9 +37,16 @@ class JobRunner(object):
     to support subjobs and provenenace calls.
     """
 
-    def __init__(self, config: Config, port=None):
+    def __init__(self, config: Config, port=None, server_mode: bool = False):
         """
-        inputs: config dictionary, EE2 URL, Job id, Token, Admin Token
+        Create the job runner.
+        
+        config - the job runner config.
+        port - the port on which the callback server should run.
+        server_mode - True indicates the JobRunner will run in callback server only mode,
+            where the callback server is expected to keep running until explicitly shut down.
+            In this case certain errors will be returned via the callback server API rather
+            than stopping the job runner.
         """
 
         self.ee2 = None
@@ -50,6 +58,7 @@ class JobRunner(object):
         self.bypass_token = os.environ.get("BYPASS_TOKEN", True)
         self.admin_token = config.admin_token
         self.config = config
+        self.server_mode = server_mode
         # self.config = self._init_config(config, job_id, ee2_url)
 
         self.hostname = config.hostname
@@ -195,13 +204,29 @@ class JobRunner(object):
                         self.logger.error("Too many subtasks")
                         self._cancel()
                         return {"error": "Canceled or unexpected error"}
-                    if req[2].get("method").startswith("special."):
-                        self._submit_special(
-                            config=config, job_id=req[1], job_params=req[2]
-                        )
-                    else:
-                        self._submit(config=config, job_id=req[1], job_params=req[2])
-                    ct += 1
+                    try:
+                        if req[2].get("method").startswith("special."):
+                            self._submit_special(
+                                config=config, job_id=req[1], job_params=req[2]
+                            )
+                        else:
+                            self._submit(config=config, job_id=req[1], job_params=req[2])
+                        ct += 1
+                    except Exception as e:
+                        if self.server_mode:
+                            err = {"error": {
+                                "code": -32601,
+                                "name": "CallbackServerError",
+                                "message": str(e),
+                                "error": traceback.format_exc()
+                            }}
+                            self.callback_queue.put(["output", req[1], err])
+                        else:
+                            # This case doesn't seem to be tested. Looking at the jobrunner
+                            # tests, the tests that might have been able to be modified to test
+                            # it are all marked as "online" which are currently disabled.
+                            # For now, since it's so simple, leaving it untested.
+                            raise  # maintain prior behavior for job runner mode and throw
                 elif req[0] == "set_provenance":
                     # Ok, we're syncing provenance in 2 different places by sending messages
                     # on 2 different queues. I think there may be design issues here

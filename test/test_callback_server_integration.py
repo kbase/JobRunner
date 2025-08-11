@@ -270,8 +270,9 @@ def test_submit_job_async(callback_ports):
     port = callback_ports[0]
 
     resp = _post(port, {
-        "method": "njs_sdk_test_1._run_submit",
+        "method": "njs_sdk_test_2._run_submit",
         "params": [{"id": "godiloveasynchrony"}],
+        "service_ver": "beta",
     })
     j = resp.json()
     job_id = j["result"][0]
@@ -285,9 +286,9 @@ def test_submit_job_async(callback_ports):
         res = resp.json()
     assert res == {"result": [{
         "result": [{
-            "hash": "366eb8cead445aa3e842cbc619082a075b0da322",
+            "hash": "9d6b868bc0bfdb61c79cf2569ff7b9abffd4c67f",
             "id": "godiloveasynchrony",
-            "name": "njs_sdk_test_1"
+            "name": "njs_sdk_test_2"
         }],
         "finished": 1,
         "id": "callback",
@@ -350,6 +351,30 @@ def test_submit_fail_module_lookup_service_ver_sync(callback_ports):
         "message": "Error looking up module KBaseReport with version fake: "
             + "'No module version found that matches your criteria!'",
     }}
+
+
+def test_submit_job_fail_too_old_image(callback_ports):
+    # This image was built such a long time ago modern versions of docker refuse to run it.
+    # The error message thrown by the MethodRunner doesn't actually reflect this. The image
+    # exists but docker refuses to pull it
+    port = callback_ports[0]
+
+    resp = _post(port, {
+        "method": "HelloService.say_hello",
+        "params": ["I'm not your buddy, pal"],
+    })
+    j = resp.json()
+    assert "JobRunner/JobRunner/DockerRunner.py" in j["error"]["error"]
+    del j["error"]["error"]
+    assert j == {
+        "error": {
+            "code": -32601,
+            "message": "Couldn't find image for "
+                + "dockerhub-ci.kbase.us/kbase:helloservice.25528a3b917ab4f40bc7aba45b08e581e33d985a",
+            "name": "CallbackServerError"
+        },
+        "finished": 1,
+    }
 
 
 def test_submit_fail_max_jobs_limit(callback_ports):
