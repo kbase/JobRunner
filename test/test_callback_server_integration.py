@@ -364,7 +364,7 @@ def test_submit_job_fail_too_old_image(callback_ports):
         "params": ["I'm not your buddy, pal"],
     })
     j = resp.json()
-    assert "base/JobRunner/JobRunner/DockerRunner.py" in j["error"]["error"]
+    assert "JobRunner/JobRunner/DockerRunner.py" in j["error"]["error"]
     del j["error"]["error"]
     assert j ==  {
         "error": {
