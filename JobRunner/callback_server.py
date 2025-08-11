@@ -184,6 +184,7 @@ def _handle_submit(app, module, method, data, token):
     _check_rpc_token(app, token)
     job_id = str(uuid.uuid4())
     data["method"] = "%s.%s" % (module, method)
+    outputs[job_id] = {"finished": 0}
     app.config["out_q"].put(["submit", job_id, data])
     app.config["jobcount"] += 1
     return {"result": [job_id]}
@@ -196,15 +197,33 @@ def _error(errstr, trace=None, code=-32000):
     return {"error": err}
 
 
-def _handle_checkjob(app, data):
-    if "params" not in data:
-        raise SanicException(status_code=404)
-    job_id = data["params"][0]
-    _check_finished(app, f"Checkjob for {job_id}")
-    resp = {"finished": 0}
+def _is_uuid(putative: str) -> bool:
+    """
+    Return True if `putative` is a valid UUID string, False otherwise.
+    """
+    try:
+        uuid.UUID(putative)
+    except ValueError:
+        return False
+    return True
 
-    if job_id in outputs:
-        resp = outputs[job_id]
+
+def _handle_checkjob(app, data):
+    if (not data.get("params")
+        or not isinstance(data["params"], list)
+        or len(data["params"]) != 1
+        or not isinstance(data["params"][0], str)
+    ):
+        return _error("method params must be a list containing exactly one job ID string")
+    job_id = data["params"][0]
+    if not _is_uuid(job_id):
+        return _error(f"Invalid job ID: {data['params'][0]}")
+    _check_finished(app, f"Checkjob for {job_id}")
+    if job_id not in outputs:
+        return _error(f"No such job ID: {job_id}")
+
+    resp = outputs[job_id]
+    if resp.get("finished") != 0:
         resp["finished"] = 1
         if "error" in resp:
             return resp
@@ -246,7 +265,7 @@ async def _process_rpc(app, data, token):
         try:
             while True:
                 _check_finished(app, f'synk check for {data["method"]} for {job_id}')
-                if job_id in outputs:
+                if outputs[job_id].get("finished") != 0:
                     resp = outputs[job_id]
                     resp["finished"] = 1
                     return resp
