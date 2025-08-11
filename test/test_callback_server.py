@@ -39,7 +39,14 @@ def test_index_post(app):
     in_q = Queue()
     # just make the cache do nothing when called so the submit call works
     cc = create_autospec(CatalogCache, spec_set=True, instance=True)
-    conf = {"token": _TOKEN, "out_q": out_q, "in_q": in_q, "catcache": cc}
+    conf = {
+        "token": _TOKEN,
+        "out_q": out_q,
+        "in_q": in_q,
+        "catcache": cc,
+        "jobcount": 0,
+        "maxjobs": 10,
+    }
     app.config.update(conf)
     data = json.dumps({"method": "bogus._test_submit"})
     response = _post(app, data)
@@ -72,9 +79,18 @@ def test_index_post(app):
 def test_index_submit_sync(mock_uuid, app):
     out_q = Queue()
     in_q = Queue()
-    conf = {"token": _TOKEN, "out_q": out_q, "in_q": in_q}
+    # just make the cache do nothing when called so the submit call works
+    cc = create_autospec(CatalogCache, spec_set=True, instance=True)
+    conf = {
+        "token": _TOKEN,
+        "out_q": out_q,
+        "in_q": in_q,
+        "catcache": cc,
+        "jobcount": 0,
+        "maxjobs": 10,
+    }
     app.config.update(conf)
-    mock_uuid.uuid1.return_value = "bogus"
+    mock_uuid.uuid4.return_value = "bogus"
     data = json.dumps({"method": "bogus.test"})
     in_q.put(["output", "bogus", {"foo": "bar"}])
     response = _post(app, data)

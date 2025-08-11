@@ -467,7 +467,7 @@ class JobRunner(object):
             self.bypass_token,
             self.cc,
         ]
-        kwargs = {"shutdown_event": self._shutdown_event}
+        kwargs = {"shutdown_event": self._shutdown_event, "max_tasks": self.config.max_tasks}
         if app_name:
             kwargs["app_name"] = app_name  # don't add if None
         self.cbs = Process(target=start_callback_server, args=cb_args, kwargs=kwargs)

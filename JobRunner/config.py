@@ -1,6 +1,7 @@
 import logging
 import os
 from socket import gethostname
+from typing import Union
 
 
 _TOKEN_ENV = "KB_AUTH_TOKEN"
@@ -33,7 +34,14 @@ def _get_admin_token():
 
 
 class Config:
-    def __init__(self, workdir=None, base_url=None, job_id=None, use_ee2=True):
+    def __init__(
+            self,
+            workdir=None,
+            base_url=None,
+            job_id=None,
+            use_ee2=True,
+            max_tasks: Union[int, None] = None,
+    ):
         self.job_id = job_id
         self.base_url = os.environ.get(_KB_BASE_URL, "https://ci.kbase.us/services/")
         self.ee2_url = None
@@ -53,7 +61,7 @@ class Config:
         self.auth2_url = f"{self.base_url}auth/api/V2/token"
 
         self.runtime = os.environ.get("RUNTIME", "docker")
-        self.max_tasks = int(os.environ.get("JR_MAX_TASKS", "10"))
+        self.max_tasks = max_tasks or int(os.environ.get("JR_MAX_TASKS", "10"))
         self.token = _get_token()
         self.admin_token = _get_admin_token()
         if _DEBUG_ENVNAME in os.environ and os.environ[_DEBUG_ENVNAME].lower() == "true":
