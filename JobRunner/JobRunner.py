@@ -373,6 +373,14 @@ class JobRunner(object):
             self.logger.error("Failed to config . Exiting.")
             raise e
 
+        if "USE_SHIFTER" in os.environ:
+            # Replace URLs for NERSC environment if set to "https://services.kbase.us"
+            old_url = "https://services.kbase.us"
+            new_url = "https://kbase.us"
+            for key, value in config.items():
+                if isinstance(value, str) and old_url in value:
+                    config[key] = value.replace(old_url, new_url)
+
         # config["job_id"] = self.job_id
         self.logger.log(
             f"Server version of Execution Engine: {config.get('ee.server.version')}"
@@ -412,6 +420,7 @@ class JobRunner(object):
         # Submit the main job
         self.logger.log(f"Job is about to run {job_params.get('app_id')}")
 
+        # Note the self.config is not used, its the ee2 config we just grabbed and modified
         # TODO Try except for when submit or watch failure happens and correct finishjob call
         self._submit(
             config=config, job_id=self.job_id, job_params=job_params, subjob=False

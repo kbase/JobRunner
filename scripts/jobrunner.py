@@ -94,6 +94,11 @@ def main():
         sys.exit(1)
     ee2_suffix = ee2_url.split("/")[-1]
     base_url = ee2_url.rstrip(ee2_suffix)
+    # Replace URLs for NERSC environment if set to "https://services.kbase.us"
+    old_url = "https://services.kbase.us"
+    new_url = "https://kbase.us"
+    if "USE_SHIFTER" in os.environ and base_url.startswith(old_url):
+        base_url = base_url.replace(old_url, new_url)
 
     config = Config(workdir=os.getcwd(), job_id=job_id, base_url=base_url)
     if not os.path.exists(config.workdir):
