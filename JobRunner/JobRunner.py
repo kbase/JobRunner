@@ -41,7 +41,7 @@ class JobRunner(object):
         """
         Create the job runner.
         
-        cnnfig - the job runner config.
+        config - the job runner config.
         port - the port on which the callback server should run.
         server_mode - True indicates the JobRunner will run in callback server only mode,
             where the callback server is expected to keep running until explicitly shut down.

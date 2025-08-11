@@ -366,7 +366,7 @@ def test_submit_job_fail_too_old_image(callback_ports):
     j = resp.json()
     assert "JobRunner/JobRunner/DockerRunner.py" in j["error"]["error"]
     del j["error"]["error"]
-    assert j ==  {
+    assert j == {
         "error": {
             "code": -32601,
             "message": "Couldn't find image for "
