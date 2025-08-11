@@ -160,7 +160,7 @@ def _check_module_lookup(app, module, data):
     # to work the same way as the old Java server
     service_ver = data.get("service_ver")
     if service_ver is None:
-        service_ver = data.get("context", {}).get("service_ver")
+        service_ver = data.get("context", {"service_ver": "release"}).get("service_ver")
     err = f"Error looking up module {module} with version {service_ver}: "
     try:
         app.config["catcache"].get_module_info(module, service_ver)

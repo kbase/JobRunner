@@ -145,7 +145,7 @@ class JobRunner(object):
         (module, method) = job_params["method"].split(".")
         service_ver = job_params.get("service_ver")
         if service_ver is None:
-            service_ver = job_params.get("context", {}).get("service_ver")
+            service_ver = job_params.get("context", {"service_ver": "release"}).get("service_ver")
 
         # TODO Fail gracefully if this step fails. For example, setting service_ver='fake'
         module_info = self.cc.get_module_info(module, service_ver)

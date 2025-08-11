@@ -85,9 +85,10 @@ class MethodRunner:
         nowutc = datetime.utcnow().replace(tzinfo=timezone.utc)
         ts = nowutc.replace(microsecond=0).isoformat()
 
+        # TODO CODE this code block appears in 4 places in the codebase
         service_ver = params.get("service_ver")
         if service_ver is None:
-            service_ver = params.get("context", {}).get("service_ver")
+            service_ver = params.get("context", {"service_ver": "release"}).get("service_ver")
 
         ctx = {
             "call_stack": [
@@ -144,7 +145,7 @@ class MethodRunner:
         (module, method) = params["method"].split(".")
         service_ver = params.get("service_ver")
         if service_ver is None:
-            service_ver = params.get("context", {}).get("service_ver")
+            service_ver = params.get("context", {"service_ver": "release"}).get("service_ver")
 
         image = module_info["docker_img_name"]
 
