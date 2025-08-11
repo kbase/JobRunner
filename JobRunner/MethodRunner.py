@@ -217,7 +217,7 @@ class MethodRunner:
         # If there is a fin_q then run this async
         action = {
             "name": module,
-            "ver": service_ver,
+            "ver": f"{module_info['version']}-{service_ver}",
             "code_url": module_info["git_url"],
             "commit": module_info["git_commit_hash"],
         }

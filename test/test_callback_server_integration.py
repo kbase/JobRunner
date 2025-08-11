@@ -245,8 +245,18 @@ def test_callback_method_fail_no_method(callback_ports):
     }
 
 
-def test_submit_job_sync(callback_ports):
+def test_submit_job_sync_and_provenance(callback_ports):
     port = callback_ports[0]
+
+    resp = _post(
+        port,
+        {
+            "method": "CallbackServer.set_provenance",
+            "params": [{"method": "foo.bar", "service_ver": "beta"}]
+        }
+    )
+    j = resp.json()
+    assert j.keys() == {"result"}
 
     resp = _post(port, {
         "method": "njs_sdk_test_1.run",
@@ -264,6 +274,24 @@ def test_submit_job_sync(callback_ports):
         "id": "callback",
         "version": "1.1"
     }
+
+    resp = _post(port, {"method": "CallbackServer.get_provenance"})
+    j = resp.json()
+    del j["result"][0][0]["time"]  # changes from run to run
+    assert j == {'result': [[{
+        'description': 'KBase SDK method run via the KBase Execution Engine',
+        'input_ws_objects': [],
+        'method': 'bar',
+        'method_params': [],
+        'service': 'foo',
+        'service_ver': 'beta',
+        'subactions': [{
+            'code_url': 'https://github.com/kbasetest/njs_sdk_test_1',
+            'commit': '366eb8cead445aa3e842cbc619082a075b0da322',
+            'name': 'njs_sdk_test_1',
+            'ver': '0.0.3-dev'
+        }],
+    }]]}
 
 
 def test_submit_job_async(callback_ports):
