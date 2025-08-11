@@ -39,7 +39,14 @@ class JobRunner(object):
 
     def __init__(self, config: Config, port=None, server_mode: bool = False):
         """
-        inputs: config dictionary, EE2 URL, Job id, Token, Admin Token
+        Create the job runner.
+        
+        cnnfig - the job runner config.
+        port - the port on which the callback server should run.
+        server_mode - True indicates the JobRunner will run in callback server only mode,
+            where the callback server is expected to keep running until explicitly shut down.
+            In this case certain errors will be returned via the callback server API rather
+            than stopping the job runner.
         """
 
         self.ee2 = None
