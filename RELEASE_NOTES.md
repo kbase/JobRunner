@@ -6,7 +6,7 @@
   response.
 * Fixed a bug that caused job files to be incorrectly written to the root job directory when
   running in callback server only mode.
-* The docker image was updated to use `tini` for launching the executable
+* The Docker image was updated to use `tini` for launching the executable
 * Updated dependency management to `uv`
 * Updated test running to `pytest`
 * Unused `setup.py` and `travis.yml` files were deleted.
