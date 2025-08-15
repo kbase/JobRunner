@@ -9,7 +9,7 @@
 * The docker image was updated to use `tini` for launching the executable
 * Updated dependency management to `uv`
 * Updated test running to `pytest`
-* Unused `setpy.py` and `travis.yml` files were deleted.
+* Unused `setup.py` and `travis.yml` files were deleted.
 * Added the `set_provenance` API method to the callback server.
 * Fixed a number of issues around the callback server hanging forever when an error
   occurred when running a subjob.
@@ -20,7 +20,7 @@
 * Restored the format of the provenance subaction `ver` field to
   `<module version>-<release version>`, e.g. `0.1.3-beta`.
 * Fixed a bug where an illegal job ID would cause a non-specific error to be thrown.
-* Fixed a bug where a non-existant job ID would be treated as a still running job.
+* Fixed a bug where a non-existent job ID would be treated as a still running job.
 * Added special casing for running jobs at NERSC that rewrites unreachable URLs.
 
 ## Earlier release notes
