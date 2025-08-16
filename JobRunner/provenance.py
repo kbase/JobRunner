@@ -25,9 +25,11 @@ class Provenance(object):
             "input_ws_objects": params.get(
                 "source_ws_objects", params.get("input_ws_objects", [])
             ),
-            "subactions": params.get("subactions", []),
+            "subactions": [],
             "description": params.get("description", desc),
         }
+        for s in params.get("subactions", []):
+            self.add_subaction(s)
 
     def add_subaction(self, data):
         if data["name"] not in self.actions:
