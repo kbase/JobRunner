@@ -279,24 +279,45 @@ def test_submit_job_sync_and_provenance(callback_ports):
     resp = _post(port, {"method": "CallbackServer.get_provenance"})
     j = resp.json()
     del j["result"][0][0]["time"]  # changes from run to run
-    assert j == {'result': [[{
-        'description': 'KBase SDK method run via the KBase Execution Engine',
-        'input_ws_objects': [],
-        'method': 'bar',
-        'method_params': [],
-        'service': 'foo',
-        'service_ver': 'beta',
-        'subactions': [{
-            'code_url': 'https://github.com/kbasetest/njs_sdk_test_1',
-            'commit': '366eb8cead445aa3e842cbc619082a075b0da322',
-            'name': 'njs_sdk_test_1',
-            'ver': '0.0.3-dev'
+    assert j == {"result": [[{
+        "description": "KBase SDK method run via the KBase Execution Engine",
+        "input_ws_objects": [],
+        "method": "bar",
+        "method_params": [],
+        "service": "foo",
+        "service_ver": "beta",
+        "subactions": [{
+            "code_url": "https://github.com/kbasetest/njs_sdk_test_1",
+            "commit": "366eb8cead445aa3e842cbc619082a075b0da322",
+            "name": "njs_sdk_test_1",
+            "ver": "0.0.3-dev"
         }],
     }]]}
 
 
-def test_submit_job_async(callback_ports):
+def test_submit_job_async_and_provenance(callback_ports):
+    # ensures that if initial provenance includes a subaction that is run via the callback
+    # server it's not duplicated in the actions list.
     port = callback_ports[0]
+
+    resp = _post(
+        port,
+        {
+            "method": "CallbackServer.set_provenance",
+            "params": [{
+                "method": "foo.bar2",
+                "service_ver": "release",
+                "subactions": [{
+                    "name": "njs_sdk_test_2",
+                    "code_url": "https://fake.com",
+                    "commit": "fake commit",
+                    "ver": "100.100.100-dev",
+                }],
+            }]
+        }
+    )
+    j = resp.json()
+    assert j.keys() == {"result"}
 
     resp = _post(port, {
         "method": "njs_sdk_test_2._run_submit",
@@ -323,6 +344,24 @@ def test_submit_job_async(callback_ports):
         "id": "callback",
         "version": "1.1"
     }]}
+
+    resp = _post(port, {"method": "CallbackServer.get_provenance"})
+    j = resp.json()
+    del j["result"][0][0]["time"]  # changes from run to run
+    assert j == {"result": [[{
+        "description": "KBase SDK method run via the KBase Execution Engine",
+        "input_ws_objects": [],
+        "method": "bar2",
+        "method_params": [],
+        "service": "foo",
+        "service_ver": "release",
+        "subactions": [{
+            "name": "njs_sdk_test_2",
+            "code_url": "https://fake.com",
+            "commit": "fake commit",
+            "ver": "100.100.100-dev",
+        }],
+    }]]}
 
 
 def test_submit_job_default_service_ver(callback_ports):
