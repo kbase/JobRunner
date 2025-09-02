@@ -16,7 +16,7 @@ multidict==5.2.0
     # via sanic
 packaging==25.0
     # via docker
-requests==2.31.0
+requests==2.32.5
     # via
     #   jobrunner (pyproject.toml)
     #   docker
