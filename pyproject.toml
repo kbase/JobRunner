@@ -5,7 +5,7 @@ description = "The EE2 JobRunner for kB_SDK apps."
 readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
-    "docker==7.0.0",
+    "docker==7.1.0",
     "requests==2.31.0",
     "sanic==21.12.2",
     "uvloop==0.19.0",
