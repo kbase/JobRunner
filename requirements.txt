@@ -34,7 +34,7 @@ uvloop==0.19.0
     # via
     #   jobrunner (pyproject.toml)
     #   sanic
-websocket-client==1.7.0
+websocket-client==1.8.0
     # via jobrunner (pyproject.toml)
 websockets==10.0
     # via
