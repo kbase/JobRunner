@@ -2,7 +2,7 @@
 #    uv pip compile --all-extras --output-file requirements.txt pyproject.toml
 aiofiles==24.1.0
     # via sanic
-certifi==2025.7.14
+certifi==2025.8.3
     # via requests
 charset-normalizer==3.4.2
     # via requests
