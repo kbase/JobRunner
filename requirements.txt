@@ -12,7 +12,7 @@ httptools==0.6.4
     # via sanic
 idna==3.10
     # via requests
-multidict==5.2.0
+multidict==6.6.4
     # via sanic
 packaging==25.0
     # via docker
