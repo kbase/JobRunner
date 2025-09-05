@@ -413,9 +413,22 @@ class JobRunner(object):
             self.callback_queue,
             self.token,
             self.bypass_token,
+            self.cc,
         ]
         self.cbs = Process(target=start_callback_server, args=cb_args)
         self.cbs.start()
+        
+        # Check that the CBS at least started
+        # TODO CALLBACK improve this later - have the callback server send an event when it's up
+        # or something, or better yet refactor this whole thing to get rid of events
+        # give it a moment to crash if it's going to
+        _sleep(0.2)
+        if self.cbs.exitcode is not None and self.cbs.exitcode != 0:
+            # No good way to test this without a lot of hacks
+            # tested manually by removing an argument from the arg list
+            raise RuntimeError(
+                f"Callback server exited immediately with code {self.cbs.exitcode}"
+            )
 
         # Submit the main job
         self.logger.log(f"Job is about to run {job_params.get('app_id')}")
