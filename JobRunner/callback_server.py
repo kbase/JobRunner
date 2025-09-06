@@ -176,10 +176,13 @@ def _handle_submit(app, module, method, data, token):
         return _error(
             f"No more than {app.config['maxjobs']} concurrently running methods are allowed"
         )
-    # Validate the module and version using the CatalogCache before submitting the job.
-    # If there is an error with the module lookup, return the error response immediately.
-    if err := _check_module_lookup(app, module, data):
-        return err
+    if module != "special":
+        # "special" denotes the method call does something unusual. The module is not registered 
+        # in the catalog. Not clear how to reasonably test this case.
+        # Validate the module and version using the CatalogCache before submitting the job.
+        # If there is an error with the module lookup, return the error response immediately.
+        if err := _check_module_lookup(app, module, data):
+            return err
 
     _check_rpc_token(app, token)
     job_id = str(uuid.uuid4())
