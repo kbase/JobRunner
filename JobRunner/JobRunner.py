@@ -373,7 +373,7 @@ class JobRunner(object):
             self.logger.error("Failed to config . Exiting.")
             raise e
 
-        if "USE_SHIFTER" in os.environ:
+        if "USE_EXTERNAL_URLS" in os.environ:
             # Replace URLs for NERSC environment if set to "https://services.kbase.us"
             old_url = "https://services.kbase.us"
             new_url = "https://kbase.us"

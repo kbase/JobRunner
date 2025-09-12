@@ -97,7 +97,7 @@ def main():
     # Replace URLs for NERSC environment if set to "https://services.kbase.us"
     old_url = "https://services.kbase.us"
     new_url = "https://kbase.us"
-    if "USE_SHIFTER" in os.environ and base_url.startswith(old_url):
+    if "USE_EXTERNAL_URLS" in os.environ and base_url.startswith(old_url):
         base_url = base_url.replace(old_url, new_url)
 
     config = Config(workdir=os.getcwd(), job_id=job_id, base_url=base_url)
