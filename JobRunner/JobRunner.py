@@ -368,22 +368,20 @@ class JobRunner(object):
             raise e
 
         try:
-            config = self.ee2.list_config()
+            ee2_config = self.ee2.list_config()
         except Exception as e:
-            self.logger.error("Failed to config . Exiting.")
+            self.logger.error("Failed to get config . Exiting.")
             raise e
 
-        if "USE_EXTERNAL_URLS" in os.environ:
-            # Replace URLs for NERSC environment if set to "https://services.kbase.us"
-            old_url = "https://services.kbase.us"
-            new_url = "https://kbase.us"
-            for key, value in config.items():
-                if isinstance(value, str) and old_url in value:
-                    config[key] = value.replace(old_url, new_url)
-
-        # config["job_id"] = self.job_id
+        if self.config.use_external_urls:
+            for key, value in ee2_config.items():
+                if isinstance(value, str) and Config.PROD_INTERNAL_URL_BASE in value:
+                    ee2_config[key] = value.replace(
+                        Config.PROD_INTERNAL_URL_BASE, Config.PROD_EXTERNAL_URL_BASE
+                    )
+            
         self.logger.log(
-            f"Server version of Execution Engine: {config.get('ee.server.version')}"
+            f"Server version of Execution Engine: {ee2_config.get('ee.server.version')}"
         )
 
         # Update job as started and log it
@@ -436,9 +434,9 @@ class JobRunner(object):
         # Note the self.config is not used, its the ee2 config we just grabbed and modified
         # TODO Try except for when submit or watch failure happens and correct finishjob call
         self._submit(
-            config=config, job_id=self.job_id, job_params=job_params, subjob=False
+            config=ee2_config, job_id=self.job_id, job_params=job_params, subjob=False
         )
-        output = self._watch(config)
+        output = self._watch(ee2_config)
         self.cbs.terminate()
         self.logger.log("Job is done")
 
