@@ -34,10 +34,10 @@ def _get_admin_token():
 
 
 class Config:
-    
+
     PROD_INTERNAL_URL_BASE =  "https://services.kbase.us"
     PROD_EXTERNAL_URL_BASE =  "https://kbase.us"
-    
+
     def __init__(
             self,
             workdir=None,

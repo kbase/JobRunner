@@ -379,7 +379,7 @@ class JobRunner(object):
                     ee2_config[key] = value.replace(
                         Config.PROD_INTERNAL_URL_BASE, Config.PROD_EXTERNAL_URL_BASE
                     )
-            
+
         self.logger.log(
             f"Server version of Execution Engine: {ee2_config.get('ee.server.version')}"
         )
