@@ -370,7 +370,7 @@ class JobRunner(object):
         try:
             ee2_config = self.ee2.list_config()
         except Exception as e:
-            self.logger.error("Failed to get config . Exiting.")
+            self.logger.error("Failed to get config. Exiting.")
             raise e
 
         if self.config.use_external_urls:
