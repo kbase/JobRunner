@@ -140,7 +140,7 @@ class DockerRunner:
             image_id = self.docker.images.get(name=image).id
             self.pulled[image] = image_id
         except docker.errors.ImageNotFound as e:
-            self.logger.error(f"{e}")
+            self.logger.log(f"Image not found locally, will attempt to pull. Error was:\n{e}")
 
         try:
             # If no tag is specified, will return a list

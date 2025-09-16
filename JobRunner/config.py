@@ -34,6 +34,10 @@ def _get_admin_token():
 
 
 class Config:
+
+    PROD_INTERNAL_URL_BASE = "https://services.kbase.us"
+    PROD_EXTERNAL_URL_BASE = "https://kbase.us"
+
     def __init__(
             self,
             workdir=None,
@@ -43,7 +47,13 @@ class Config:
             max_tasks: Union[int, None] = None,
     ):
         self.job_id = job_id
+        self.use_external_urls = os.environ.get("USE_EXTERNAL_URLS", "false").lower() == "true"
         self.base_url = os.environ.get(_KB_BASE_URL, "https://ci.kbase.us/services/")
+        if self.use_external_urls and self.base_url.startswith(self.PROD_INTERNAL_URL_BASE):
+            # internal urls are only accessible inside the KBase firewall
+            self.base_url = self.base_url.replace(
+                self.PROD_INTERNAL_URL_BASE, self.PROD_EXTERNAL_URL_BASE
+            )
         self.ee2_url = None
         self.debug = False
         self.cgroup = None

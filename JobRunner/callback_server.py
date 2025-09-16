@@ -177,7 +177,7 @@ def _handle_submit(app, module, method, data, token):
             f"No more than {app.config['maxjobs']} concurrently running methods are allowed"
         )
     if module != "special":
-        # "special" denotes the method call does something unusual. The module is not registered 
+        # "special" denotes the method call does something unusual. The module is not registered
         # in the catalog. Not clear how to reasonably test this case.
         # Validate the module and version using the CatalogCache before submitting the job.
         # If there is an error with the module lookup, return the error response immediately.
