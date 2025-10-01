@@ -17,7 +17,7 @@ dependencies = [
 dev = [
     "aiohttp==3.9.1",
     "ipython>=8.18.1",
-    "pytest==8.4.1",
+    "pytest==8.4.2",
     "pytest-cov==6.2.1",
     "sanic-testing==0.8.3",
 ]
