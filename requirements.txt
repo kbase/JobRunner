@@ -14,7 +14,7 @@ idna==3.10
     # via requests
 multidict==5.2.0
     # via sanic
-packaging==25.0
+packaging==26.0
     # via docker
 requests==2.31.0
     # via
