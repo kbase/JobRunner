@@ -24,7 +24,7 @@ sanic==21.12.2
     # via jobrunner (pyproject.toml)
 sanic-routing==0.7.2
     # via sanic
-ujson==5.10.0
+ujson==5.11.0
     # via sanic
 urllib3==2.5.0
     # via
