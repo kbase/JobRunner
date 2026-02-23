@@ -2,7 +2,7 @@
 # Wraper script for slurm job check
 # Args are the Job ID
 # Returns back Running, Finished, Pending or Unknown
-#
+#  Ensure that slurm_submit and slurm_checkjob are in the PATH . ~/.local_settings may need to be updated 
 JS=$(squeue -j $1 -o %t --noheader)
 
 if [ -z "$JS" ] ; then

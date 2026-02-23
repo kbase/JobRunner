@@ -3,9 +3,13 @@
 # Wrapper script for Slurm batch submit
 # Args are submit script, outputfile, and error file
 # Return the job id via stdout
+# Ensure that  slurm_submit and slurm_checkjob are in the PATH . ~/.local_settings may need to be updated 
+
+module purge
+PATH=/usr/common/software/bin:/usr/common/mss/bin:/usr/common/nsg/bin:/opt/ovis/bin:/opt/ovis/sbin:/usr/local/bin:/usr/bin:/bin:/usr/lib/mit/bin:/usr/lib/mit/sbin
 
 SUBMIT=$1
 LOGFILE=$2
 ERRFILE=$3
 
-sbatch -o $LOGFILE -e $ERRFILE $SUBMIT
+sbatch -o $LOGFILE -e $ERRFILE $SUBMIT|sed 's/Submitted batch job //'
